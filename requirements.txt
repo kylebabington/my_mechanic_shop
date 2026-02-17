@@ -1,6 +1,9 @@
 flask
 flask-sqlalchemy
+python-jose[cryptography]
 flask-marshmallow
 marshmallow-sqlalchemy
 mysql-connector-python
 python-dotenv
+flask-limiter
+flask-caching

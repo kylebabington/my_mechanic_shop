@@ -13,5 +13,16 @@ class CustomerSchema(ma.SQLAlchemyAutoSchema):
     email = fields.Email(required=True)
     phone = fields.Str(required=False, allow_none=True)
 
+    password = fields.Str(required=True, load_only=True)
+
 customer_schema = CustomerSchema()
 customers_schema = CustomerSchema(many=True)
+
+class CustomerLoginSchema(ma.Schema):
+    """
+    Schema used only for login payload validation.
+    """
+    email = fields.Email(required=True)
+    password = fields.Str(required=True, load_only=True)
+
+login_schema = CustomerLoginSchema()

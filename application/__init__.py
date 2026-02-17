@@ -5,7 +5,7 @@ import os
 from flask import Flask
 
 from config import DevelopmentConfig, config_by_name
-from application.extensions import db, ma
+from application.extensions import db, ma, limiter, cache, migrate
 
 # Import models so SQLAlchemy knows about them (table creation/migrations).
 import application.models  # noqa: F401
@@ -30,13 +30,13 @@ def create_app(config_object=None):
     # Bind extensions to this app instance.
     db.init_app(app)
     ma.init_app(app)
+    limiter.init_app(app)
+    cache.init_app(app)
+    migrate.init_app(app, db)
 
     # Register blueprints.
     app.register_blueprint(customers_bp, url_prefix="/customers")
     app.register_blueprint(mechanics_bp, url_prefix="/mechanics")
     app.register_blueprint(tickets_bp, url_prefix="/service-tickets")
-
-    with app.app_context():
-        db.create_all()
     
     return app

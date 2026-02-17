@@ -100,3 +100,17 @@ temp/
 .mypy_cache/
 .dmypy.json
 dmypy.json
+
+# =============================
+# Zip files
+# =============================
+*.zip
+*.rar
+*.7z
+*.tar
+*.gz
+*.bz2
+*.wim
+*.iso
+*.img
+*.vhdx

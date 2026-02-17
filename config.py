@@ -11,6 +11,7 @@ load_dotenv()  # load .env into os.environ
 class BaseConfig:
     # SQLAlchemy config: keeps Flask-SQLAlchemy from tracking every object change.
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SECRET_KEY = os.environ.get("SECRET_KEY")
 
 class DevelopmentConfig(BaseConfig):
     SQLALCHEMY_DATABASE_URI = os.environ.get("DATABASE_URL")
@@ -19,7 +20,6 @@ class DevelopmentConfig(BaseConfig):
             "DATABASE_URL is not set. Copy .env.example to .env and set your database URL."
         )
     DEBUG = os.environ.get("FLASK_DEBUG", "true").lower() in ("1", "true", "yes")
-
 
 # Map config names to classes so create_app() can select by FLASK_ENV / CONFIG.
 config_by_name = {

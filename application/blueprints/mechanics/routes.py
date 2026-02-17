@@ -36,6 +36,32 @@ def get_mechanic(mechanic_id: int):
         return jsonify({"error": "Mechanic not found."}), 404
     return mechanic_schema.jsonify(mechanic), 200
 
+@mechanics_bp.route("/most-tickets", methods=["GET"])
+def mechanics_by_most_tickets():
+    """
+    Returns mechanics sorted by how many tickets they have worked on (descending).
+
+    Why this works:
+    - mechanic.service_tickets is a relationship list
+    - len(mechanic.service_tickets) tells us how many tickets they are attached to
+    """
+    mechanics = db.session.execute(select(Mechanic)).scalars().all()
+
+    mechanics.sort(key=lambda m: len(m.service_tickets), reverse=True)
+
+    results = []
+    for m in mechanics:
+        results.append({
+            "id":m.id,
+            "name":m.name,
+            "email":m.email,
+            "phone":m.phone,
+            "salary":m.salary,
+            "tickets_count":len(m.service_tickets),
+        })
+    
+    return jsonify(results), 200
+
 @mechanics_bp.route("/<int:mechanic_id>", methods=["PUT"])
 def update_mechanic(mechanic_id: int):
     mechanic = db.session.get(Mechanic, mechanic_id)

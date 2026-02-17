@@ -4,7 +4,7 @@ from sqlalchemy import select
 
 from application.extensions import db
 from application.models.mechanic import Mechanic
-from application.schemas.mechanic_schema import mechanic_schema, mechanics_schema
+from application.blueprints.mechanics.schemas import mechanic_schema, mechanics_schema
 from application.blueprints.mechanics import mechanics_bp
 
 @mechanics_bp.route("/", methods=["POST"])

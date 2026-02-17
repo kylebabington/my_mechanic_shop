@@ -6,8 +6,7 @@ from application.extensions import db
 from application.models.service_ticket import ServiceTicket
 from application.models.customer import Customer
 from application.models.mechanic import Mechanic
-from application.schemas.service_ticket_schema import ticket_schema, tickets_schema
-from application.schemas.mechanic_schema import mechanics_schema
+from application.blueprints.tickets.schemas import ticket_schema, tickets_schema
 from application.blueprints.tickets import tickets_bp
 
 @tickets_bp.route("/", methods=["POST"])
@@ -69,51 +68,29 @@ def delete_ticket(ticket_id: int):
     db.session.commit()
     return jsonify({"message": f"Ticket: {ticket_id} deleted successfully."}), 200
 
-# ---- Many-to-Many: Assign mechanics to tickets ----
+# ---- Many-to-Many: Assign / remove mechanics ----
 
-@tickets_bp.route("/<int:ticket_id>/assign_mechanics", methods=["POST"])
-def assign_mechanics_to_ticket(ticket_id: int):
+@tickets_bp.route("/<int:ticket_id>/assign-mechanic/<int:mechanic_id>", methods=["PUT"])
+def assign_mechanic_to_ticket(ticket_id: int, mechanic_id: int):
     ticket = db.session.get(ServiceTicket, ticket_id)
     if not ticket:
         return jsonify({"error": "Ticket not found."}), 404
 
-    data = request.get_json() or {}
-    mechanic_ids = data.get("mechanic_ids")
+    mechanic = db.session.get(Mechanic, mechanic_id)
+    if not mechanic:
+        return jsonify({"error": "Mechanic not found."}), 404
 
-    if not isinstance(mechanic_ids, list) or not mechanic_ids:
-        return jsonify({"error": "Invalid mechanic IDs."}), 400
+    if mechanic in ticket.mechanics:
+        return jsonify({"message": "Mechanic already assigned.", "ticket_id": ticket.id}), 200
 
-    mechanics = db.session.execute(
-        select(Mechanic).where(Mechanic.id.in_(mechanic_ids))
-    ).scalars().all()
-
-    found_ids = {m.id for m in mechanics}
-    missing_ids = [mid for mid in mechanic_ids if mid not in found_ids]
-    if missing_ids:
-        return jsonify({"error": "Some mechanics not found: {missing_ids}"}), 400
-
-    existing_ids = {m.id for m in ticket.mechanics}
-    for mech in mechanics:
-        if mech.id not in existing_ids:
-            ticket.mechanics.append(mech)
-
+    ticket.mechanics.append(mechanic)
     db.session.commit()
 
-    return jsonify({
-        "ticket_id": ticket.id,
-        "assigned_mechanic_ids": [m.id for m in ticket.mechanics],
-    }), 200
+    return ticket_schema.jsonify(ticket), 200
 
-@tickets_bp.route("/<int:ticket_id>/mechanics", methods=["GET"])
-def list_ticket_mechanics(ticket_id: int):
-    ticket = db.session.get(ServiceTicket, ticket_id)
-    if not ticket:
-        return jsonify({"error": "Ticket not found."}), 404
 
-    return mechanics_schema.jsonify(ticket.mechanics), 200
-
-@tickets_bp.route("/<int:ticket_id>/mechanics/<int:mechanic_id>", methods=["DELETE"])
-def remove_ticket_mechanic(ticket_id: int, mechanic_id: int):
+@tickets_bp.route("/<int:ticket_id>/remove-mechanic/<int:mechanic_id>", methods=["PUT"])
+def remove_mechanic_from_ticket(ticket_id: int, mechanic_id: int):
     ticket = db.session.get(ServiceTicket, ticket_id)
     if not ticket:
         return jsonify({"error": "Ticket not found."}), 404

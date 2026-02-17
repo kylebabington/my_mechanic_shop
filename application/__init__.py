@@ -34,7 +34,7 @@ def create_app(config_object=None):
     # Register blueprints.
     app.register_blueprint(customers_bp, url_prefix="/customers")
     app.register_blueprint(mechanics_bp, url_prefix="/mechanics")
-    app.register_blueprint(tickets_bp, url_prefix="/tickets")
+    app.register_blueprint(tickets_bp, url_prefix="/service-tickets")
 
     with app.app_context():
         db.create_all()

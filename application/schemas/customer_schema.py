@@ -1,4 +1,4 @@
-# application/schemas/customer_schema.py
+
 
 from marshmallow import fields
 from application.extensions import ma

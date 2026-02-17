@@ -104,7 +104,7 @@ def assign_mechanics_to_ticket(ticket_id: int):
         "assigned_mechanic_ids": [m.id for m in ticket.mechanics],
     }), 200
 
-@tickets_bp.route("/<int:ticket_id>/mechanics", methods=["Get"])
+@tickets_bp.route("/<int:ticket_id>/mechanics", methods=["GET"])
 def list_ticket_mechanics(ticket_id: int):
     ticket = db.session.get(ServiceTicket, ticket_id)
     if not ticket:

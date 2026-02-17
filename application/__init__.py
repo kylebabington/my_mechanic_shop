@@ -1,19 +1,27 @@
 # application/__init__.py
-# This is where create_app() lives.
+# Application factory: create_app() is the only place that creates a Flask instance.
 
+import os
 from flask import Flask
-from config import DevelopmentConfig
+
+from config import DevelopmentConfig, config_by_name
 from application.extensions import db, ma
 
-# import modesl so SQLAlchemy knows about them (table creation/migrations).
-import application.models
+# Import models so SQLAlchemy knows about them (table creation/migrations).
+import application.models  # noqa: F401
 
-# import blueprints
+# Import blueprints (they are registered inside create_app).
 from application.blueprints.customers import customers_bp
 from application.blueprints.mechanics import mechanics_bp
 from application.blueprints.tickets import tickets_bp
 
-def create_app(config_object=DevelopmentConfig):
+
+def create_app(config_object=None):
+    """Create and configure the Flask application (application factory pattern)."""
+    if config_object is None:
+        config_name = os.environ.get("FLASK_ENV", "development")
+        config_object = config_by_name.get(config_name, DevelopmentConfig)
+
     app = Flask(__name__)
     
     # load configuration (db uri, debug flags, etc)

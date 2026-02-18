@@ -1,0 +1,736 @@
+{
+  "info": {
+    "_postman_id": "e7213221-10e7-4553-bff6-ad3c3192b035",
+    "name": "My Mechanic Shop API",
+    "description": "Postman collection for testing all endpoints in the My Mechanic Shop Flask API.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "49805840",
+    "_collection_link": "https://go.postman.co/collection/49805840-e7213221-10e7-4553-bff6-ad3c3192b035?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "Customers",
+      "item": [
+        {
+          "name": "Create Customer",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Jane Doe\",\n  \"email\": \"jane@example.com\",\n  \"phone\": \"555-123-4567\",\n  \"password\": \"securepassword123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/customers/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "customers",
+                ""
+              ]
+            },
+            "description": "Register a new customer. phone is optional."
+          },
+          "response": []
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const json = pm.response.json();",
+                  "    if (json.auth_token) {",
+                  "        pm.collectionVariables.set('auth_token', json.auth_token);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"jane@example.com\",\n  \"password\": \"securepassword123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/customers/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "customers",
+                "login"
+              ]
+            },
+            "description": "Login and receive auth_token. Token is auto-saved to collection variable for protected routes."
+          },
+          "response": []
+        },
+        {
+          "name": "My Tickets (auth)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/customers/my-tickets",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "customers",
+                "my-tickets"
+              ]
+            },
+            "description": "Get tickets for the logged-in customer. Requires Bearer token."
+          },
+          "response": []
+        },
+        {
+          "name": "List Customers (paginated)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/customers/?limit=10&offset=0",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "customers",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Max 100"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            },
+            "description": "Paginated list. limit (1-100), offset (>=0)."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Customer by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/customers/{{customer_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "customers",
+                "{{customer_id}}"
+              ]
+            },
+            "description": "Get a single customer by ID."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Me (auth)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Jane Doe Updated\",\n  \"email\": \"jane.updated@example.com\",\n  \"phone\": \"555-999-0000\",\n  \"password\": \"newpassword456\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/customers/me",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "customers",
+                "me"
+              ]
+            },
+            "description": "Update the logged-in customer. password optional."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Me (auth)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/customers/me",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "customers",
+                "me"
+              ]
+            },
+            "description": "Delete the logged-in customer account."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Mechanics",
+      "item": [
+        {
+          "name": "Create Mechanic",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Bob Smith\",\n  \"email\": \"bob@garage.com\",\n  \"phone\": \"555-111-2222\",\n  \"salary\": 55000.00\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/mechanics/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "mechanics",
+                ""
+              ]
+            },
+            "description": "Create a new mechanic. phone is optional."
+          },
+          "response": []
+        },
+        {
+          "name": "List Mechanics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/mechanics/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "mechanics",
+                ""
+              ]
+            },
+            "description": "List all mechanics."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Mechanic by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/mechanics/{{mechanic_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "mechanics",
+                "{{mechanic_id}}"
+              ]
+            },
+            "description": "Get a single mechanic by ID."
+          },
+          "response": []
+        },
+        {
+          "name": "Mechanics by Most Tickets",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/mechanics/most-tickets",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "mechanics",
+                "most-tickets"
+              ]
+            },
+            "description": "Returns mechanics sorted by number of tickets (descending)."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Mechanic",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Bob Smith\",\n  \"email\": \"bob.updated@garage.com\",\n  \"phone\": \"555-111-3333\",\n  \"salary\": 60000.00\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/mechanics/{{mechanic_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "mechanics",
+                "{{mechanic_id}}"
+              ]
+            },
+            "description": "Update a mechanic by ID."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Mechanic",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/mechanics/{{mechanic_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "mechanics",
+                "{{mechanic_id}}"
+              ]
+            },
+            "description": "Delete a mechanic by ID."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Service Tickets",
+      "item": [
+        {
+          "name": "Create Ticket (auth)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"VIN\": \"1HGBH41JXMN109186\",\n  \"service_date\": \"2025-02-18\",\n  \"service_desc\": \"Oil change and tire rotation\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/service-tickets/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "service-tickets",
+                ""
+              ]
+            },
+            "description": "Create a service ticket. customer_id is set from token. Rate limited: 5 per minute."
+          },
+          "response": []
+        },
+        {
+          "name": "List All Tickets",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/service-tickets/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "service-tickets",
+                ""
+              ]
+            },
+            "description": "List all service tickets (cached 60s)."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Ticket by ID (auth)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/service-tickets/{{ticket_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "service-tickets",
+                "{{ticket_id}}"
+              ]
+            },
+            "description": "Get a ticket. Only owner (customer from token) can access."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Ticket (auth)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"VIN\": \"1HGBH41JXMN109186\",\n  \"service_date\": \"2025-02-20\",\n  \"service_desc\": \"Oil change, tire rotation, brake check\",\n  \"customer_id\": 1\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/service-tickets/{{ticket_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "service-tickets",
+                "{{ticket_id}}"
+              ]
+            },
+            "description": "Full update. Only owner can update. customer_id required in body."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Ticket (auth)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/service-tickets/{{ticket_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "service-tickets",
+                "{{ticket_id}}"
+              ]
+            },
+            "description": "Delete a ticket. Only owner can delete."
+          },
+          "response": []
+        },
+        {
+          "name": "Assign Mechanic to Ticket",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/service-tickets/{{ticket_id}}/assign-mechanic/{{mechanic_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "service-tickets",
+                "{{ticket_id}}",
+                "assign-mechanic",
+                "{{mechanic_id}}"
+              ]
+            },
+            "description": "Add a mechanic to a ticket (no auth)."
+          },
+          "response": []
+        },
+        {
+          "name": "Remove Mechanic from Ticket",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/service-tickets/{{ticket_id}}/remove-mechanic/{{mechanic_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "service-tickets",
+                "{{ticket_id}}",
+                "remove-mechanic",
+                "{{mechanic_id}}"
+              ]
+            },
+            "description": "Remove a mechanic from a ticket."
+          },
+          "response": []
+        },
+        {
+          "name": "Edit Ticket Mechanics (auth)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"add_ids\": [1, 2],\n  \"remove_ids\": [3]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/service-tickets/{{ticket_id}}/edit",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "service-tickets",
+                "{{ticket_id}}",
+                "edit"
+              ]
+            },
+            "description": "Bulk add/remove mechanics. Only ticket owner. add_ids and remove_ids are arrays of mechanic IDs."
+          },
+          "response": []
+        },
+        {
+          "name": "Add Part to Ticket (auth)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/service-tickets/{{ticket_id}}/add-part/{{part_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "service-tickets",
+                "{{ticket_id}}",
+                "add-part",
+                "{{part_id}}"
+              ]
+            },
+            "description": "Add one inventory part to the ticket. Only ticket owner."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Inventory",
+      "item": [
+        {
+          "name": "Create Part",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Oil Filter\",\n  \"price\": 12.99\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/inventory/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "inventory",
+                ""
+              ]
+            },
+            "description": "Create a new inventory part. Part name must be unique."
+          },
+          "response": []
+        },
+        {
+          "name": "List Parts",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/inventory/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "inventory",
+                ""
+              ]
+            },
+            "description": "List all inventory parts."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Part by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/inventory/{{part_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "inventory",
+                "{{part_id}}"
+              ]
+            },
+            "description": "Get a single part by ID."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Part",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Premium Oil Filter\",\n  \"price\": 18.99\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/inventory/{{part_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "inventory",
+                "{{part_id}}"
+              ]
+            },
+            "description": "Update a part by ID."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Part",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/inventory/{{part_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "inventory",
+                "{{part_id}}"
+              ]
+            },
+            "description": "Delete a part by ID."
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:5000"
+    },
+    {
+      "key": "auth_token",
+      "value": ""
+    },
+    {
+      "key": "customer_id",
+      "value": "1"
+    },
+    {
+      "key": "mechanic_id",
+      "value": "1"
+    },
+    {
+      "key": "ticket_id",
+      "value": "1"
+    },
+    {
+      "key": "part_id",
+      "value": "1"
+    }
+  ]
+}

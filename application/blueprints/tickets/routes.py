@@ -9,6 +9,7 @@ from application.models.mechanic import Mechanic
 from application.utils.util import token_required
 from application.blueprints.tickets.schemas import ticket_schema, tickets_schema
 from application.blueprints.tickets import tickets_bp
+from application.models.inventory import Inventory
 
 @tickets_bp.route("/", methods=["POST"])
 @limiter.limit("5 per minute")
@@ -195,3 +196,30 @@ def edit_ticket_mechanics(customer_id: int, ticket_id: int):
         "ticket_id": ticket.id,
         "mechanic_ids": [m.id for m in ticket.mechanics]
     }), 200
+
+@tickets_bp.route("/<int:ticket_id>/add-part/<int:part_id>", methods=["PUT"])
+@token_required
+def add_part_to_ticket(customer_id: int, ticket_id: int, part_id: int):
+    """
+    Add ONE inventory part to ONE service ticket.
+    PUT /tickets/<int:ticket_id>/add-part/<int:part_id>
+    Requires Bearer token (customer must own the ticket).
+    """
+    ticket = db.session.get(ServiceTicket, ticket_id)
+    if not ticket:
+        return jsonify({"error": "Ticket not found."}), 404
+
+    if ticket.customer_id != customer_id:
+        return jsonify({"error": "Forbidden."}), 403
+
+    part = db.session.get(Inventory, part_id)
+    if not part:
+        return jsonify({"error": "Part not found."}), 404
+
+    if part in ticket.parts:
+        return jsonify({"message": "Part already added to ticket."}), 200
+
+    ticket.parts.append(part)
+    db.session.commit()
+
+    return ticket_schema.jsonify(ticket), 200

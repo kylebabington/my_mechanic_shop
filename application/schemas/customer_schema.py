@@ -7,7 +7,8 @@ from application.models.customer import Customer
 class CustomerSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
         model = Customer
-        load_instance = False 
+        load_instance = False
+        exclude = ("password_hash",)  # Never accept or expose; use password + set_password()
 
     name = fields.Str(required=True)
     email = fields.Email(required=True)

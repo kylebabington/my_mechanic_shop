@@ -4,3 +4,4 @@
 from application.models.customer import Customer 
 from application.models.service_ticket import ServiceTicket
 from application.models.mechanic import Mechanic
+from application.models.inventory import Inventory

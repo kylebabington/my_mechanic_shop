@@ -210,7 +210,7 @@ def add_part_to_ticket(customer_id: int, ticket_id: int, part_id: int):
         return jsonify({"error": "Ticket not found."}), 404
 
     if ticket.customer_id != customer_id:
-        return jsonify({"error": "Forbidden."}), 403
+        return jsonify({"error": "Forbidden. You can only add parts to your own tickets."}), 403
 
     part = db.session.get(Inventory, part_id)
     if not part:

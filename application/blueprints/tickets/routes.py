@@ -58,7 +58,7 @@ def update_ticket(customer_id: int, ticket_id: int):
         return jsonify({"error": "Forbidden."}), 403
 
     try:
-        ticket_data = ticket_schema.load(request.json)
+        ticket_data = ticket_schema.load(request.json, partial=("customer_id",))
     except ValidationError as e:
         return jsonify(e.messages), 400
 
@@ -135,7 +135,7 @@ def remove_mechanic_from_ticket(ticket_id: int, mechanic_id: int):
 @tickets_bp.route("/<int:ticket_id>/edit", methods=["PUT"])
 @token_required
 def edit_ticket_mechanics(customer_id: int, ticket_id: int):
-    f"""
+    """
     Update the many-to-many relationship between ServiceTicket and Mechanic.
 
     Expects JSON like:

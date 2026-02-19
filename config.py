@@ -21,8 +21,25 @@ class DevelopmentConfig(BaseConfig):
         )
     DEBUG = os.environ.get("FLASK_DEBUG", "true").lower() in ("1", "true", "yes")
 
+
+class TestingConfig(BaseConfig):
+    TESTING = True
+    DEBUG = True
+
+    SQLALCHEMY_DATABASE_URI = "sqlite:///testing.db"
+
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
+
+    CACHE_TYPE = "SimpleCache"
+
+    SECRET_KEY = "test_secret_key"
+
+
+
 # Map config names to classes so create_app() can select by FLASK_ENV / CONFIG.
 config_by_name = {
     "development": DevelopmentConfig,
     "DevelopmentConfig": DevelopmentConfig,
+    "TestingConfig": TestingConfig,
 }
+

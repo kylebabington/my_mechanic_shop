@@ -17,6 +17,7 @@ A RESTful Flask API for managing a mechanic shop: **customers**, **mechanics**, 
 - [API Overview](#api-overview)
 - [Authentication](#authentication)
 - [API Documentation (Swagger)](#api-documentation-swagger)
+- [Testing](#testing)
 - [Testing with Postman](#testing-with-postman)
 - [License](#license)
 
@@ -31,6 +32,7 @@ A RESTful Flask API for managing a mechanic shop: **customers**, **mechanics**, 
 - **Security**: Password hashing (Werkzeug), JWT (python-jose) for protected routes
 - **API behavior**: Rate limiting (Flask-Limiter), optional response caching (Flask-Caching), JSON request/response with Marshmallow validation
 - **Docs**: OpenAPI 2.0 spec (`swagger.yaml`) and Swagger UI at `/api/docs`
+- **Testing**: unittest-based test suite for customers, mechanics, service tickets, and inventory; uses SQLite via `TestingConfig`
 
 ---
 
@@ -56,7 +58,7 @@ A RESTful Flask API for managing a mechanic shop: **customers**, **mechanics**, 
 ```
 my_mechanic_shop/
 ├── app.py                    # Entry point; creates app and runs server
-├── config.py                 # Loads .env; BaseConfig, DevelopmentConfig
+├── config.py                 # Loads .env; BaseConfig, DevelopmentConfig, TestingConfig
 ├── requirements.txt          # Python dependencies
 ├── .env.example              # Template for .env (copy to .env)
 ├── .gitignore
@@ -73,19 +75,26 @@ my_mechanic_shop/
 │   │   ├── mechanic.py
 │   │   ├── service_ticket.py
 │   │   └── inventory.py
-│   ├── schemas/              # Marshmallow schemas
+│   ├── schemas/              # Marshmallow schemas (shared)
 │   │   ├── customer_schema.py
 │   │   ├── mechanic_schema.py
-│   │   └── (tickets, etc.)
+│   │   ├── service_ticket_schema.py
+│   │   └── inventory_schema.py
 │   ├── blueprints/
 │   │   ├── customers/        # /customers
-│   │   ├── mechanics/        # /mechanics
-│   │   ├── tickets/          # /service-tickets
+│   │   ├── mechanics/        # /mechanics (routes + schemas)
+│   │   ├── tickets/          # /service-tickets (routes + schemas)
 │   │   └── inventory/        # /inventory
 │   ├── utils/
 │   │   └── util.py           # JWT encode, token_required decorator
 │   └── static/
 │       └── swagger.yaml      # OpenAPI 2.0 spec
+├── tests/
+│   ├── __init__.py
+│   ├── test_customer.py
+│   ├── test_mechanics.py
+│   ├── test_tickets.py
+│   └── test_inventory.py
 └── README.md                 # This file
 ```
 
@@ -214,6 +223,26 @@ The project uses **Flask-Migrate** (Alembic) for schema changes.
   ```
 
 Ensure `DATABASE_URL` (and optionally `FLASK_APP=app.py`) is set when running these commands.
+
+---
+
+## Testing
+
+The project includes a unittest-based test suite that uses **TestingConfig** with a SQLite database for tests. No MySQL or `.env` is required to run tests.
+
+**Run all tests:**
+
+```bash
+python -m pytest tests/ -v
+```
+
+Or with the standard library runner:
+
+```bash
+python -m unittest discover -s tests -v
+```
+
+Tests cover customers, mechanics, service tickets, and inventory (CRUD, auth, pagination, and relationships). Each test module uses a fresh app context and drops/recreates tables in `setUp`/`tearDown`.
 
 ---
 

@@ -1,0 +1,662 @@
+swagger: "2.0"
+info:
+  title: "My Mechanic Shop API"
+  description: "Flask API for customers, mechanics, service tickets, and inventory."
+  version: "1.0.0"
+
+host: "localhost:5000"
+schemes:
+  - "http"
+
+consumes:
+  - "application/json"
+produces:
+  - "application/json"
+
+# ---- AUTH (Bearer Token) ----
+securityDefinitions:
+  bearerAuth:
+    type: apiKey
+    name: Authorization
+    in: header
+    description: "Use: Bearer <auth_token>"
+
+paths:
+  # -------------------- Customers --------------------
+  /customers/:
+    post:
+      tags: [Customers]
+      summary: "Create customer"
+      description: "Register a new customer. Email must be unique."
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema: { $ref: "#/definitions/CustomerCreatePayload" }
+      responses:
+        201:
+          description: "Created"
+          schema: { $ref: "#/definitions/CustomerResponse" }
+        400:
+          description: "Validation error or email already exists"
+          schema: { $ref: "#/definitions/ErrorMessage" }
+
+    get:
+      tags: [Customers]
+      summary: "List customers (paginated)"
+      description: "Supports query params: limit (1-100), offset (>=0)."
+      parameters:
+        - name: limit
+          in: query
+          type: integer
+          required: false
+        - name: offset
+          in: query
+          type: integer
+          required: false
+      responses:
+        200:
+          description: "OK"
+          schema: { $ref: "#/definitions/CustomersListResponse" }
+        400:
+          description: "Bad pagination values"
+          schema: { $ref: "#/definitions/ErrorMessage" }
+
+  /customers/login:
+    post:
+      tags: [Customers]
+      summary: "Login (returns auth token)"
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema: { $ref: "#/definitions/CustomerLoginPayload" }
+      responses:
+        200:
+          description: "OK"
+          schema: { $ref: "#/definitions/CustomerLoginResponse" }
+        401:
+          description: "Invalid credentials"
+          schema: { $ref: "#/definitions/ErrorMessage" }
+
+  /customers/my-tickets:
+    get:
+      tags: [Customers]
+      summary: "My tickets (auth)"
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: "OK"
+          schema:
+            type: array
+            items: { $ref: "#/definitions/TicketResponse" }
+        401:
+          description: "Missing/invalid token"
+          schema: { $ref: "#/definitions/ErrorMessage" }
+
+  /customers/me:
+    put:
+      tags: [Customers]
+      summary: "Update logged-in customer (auth)"
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema: { $ref: "#/definitions/CustomerCreatePayload" }
+      responses:
+        200:
+          description: "OK"
+          schema: { $ref: "#/definitions/CustomerResponse" }
+        401:
+          description: "Missing/invalid token"
+          schema: { $ref: "#/definitions/ErrorMessage" }
+
+    delete:
+      tags: [Customers]
+      summary: "Delete logged-in customer (auth)"
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: "OK"
+          schema: { $ref: "#/definitions/DeleteResponse" }
+        401:
+          description: "Missing/invalid token"
+          schema: { $ref: "#/definitions/ErrorMessage" }
+
+  /customers/{customer_id}:
+    get:
+      tags: [Customers]
+      summary: "Get customer by id"
+      parameters:
+        - name: customer_id
+          in: path
+          required: true
+          type: integer
+      responses:
+        200:
+          description: "OK"
+          schema: { $ref: "#/definitions/CustomerResponse" }
+        404:
+          description: "Not found"
+          schema: { $ref: "#/definitions/ErrorMessage" }
+
+  # -------------------- Mechanics --------------------
+  /mechanics/:
+    post:
+      tags: [Mechanics]
+      summary: "Create mechanic"
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema: { $ref: "#/definitions/MechanicPayload" }
+      responses:
+        201:
+          description: "Created"
+          schema: { $ref: "#/definitions/MechanicResponse" }
+        400:
+          description: "Validation error or email exists"
+          schema: { $ref: "#/definitions/ErrorMessage" }
+
+    get:
+      tags: [Mechanics]
+      summary: "List mechanics"
+      responses:
+        200:
+          description: "OK"
+          schema:
+            type: array
+            items: { $ref: "#/definitions/MechanicResponse" }
+
+  /mechanics/most-tickets:
+    get:
+      tags: [Mechanics]
+      summary: "Mechanics by most tickets"
+      responses:
+        200:
+          description: "OK"
+          schema:
+            type: array
+            items: { $ref: "#/definitions/MechanicMostTicketsResponse" }
+
+  /mechanics/{mechanic_id}:
+    get:
+      tags: [Mechanics]
+      summary: "Get mechanic by id"
+      parameters:
+        - name: mechanic_id
+          in: path
+          required: true
+          type: integer
+      responses:
+        200:
+          description: "OK"
+          schema: { $ref: "#/definitions/MechanicResponse" }
+        404:
+          description: "Not found"
+          schema: { $ref: "#/definitions/ErrorMessage" }
+
+    put:
+      tags: [Mechanics]
+      summary: "Update mechanic"
+      parameters:
+        - name: mechanic_id
+          in: path
+          required: true
+          type: integer
+        - in: body
+          name: body
+          required: true
+          schema: { $ref: "#/definitions/MechanicPayload" }
+      responses:
+        200:
+          description: "OK"
+          schema: { $ref: "#/definitions/MechanicResponse" }
+        404:
+          description: "Not found"
+          schema: { $ref: "#/definitions/ErrorMessage" }
+
+    delete:
+      tags: [Mechanics]
+      summary: "Delete mechanic"
+      parameters:
+        - name: mechanic_id
+          in: path
+          required: true
+          type: integer
+      responses:
+        200:
+          description: "OK"
+          schema: { $ref: "#/definitions/DeleteResponse" }
+        404:
+          description: "Not found"
+          schema: { $ref: "#/definitions/ErrorMessage" }
+
+  # -------------------- Inventory --------------------
+  /inventory/:
+    post:
+      tags: [Inventory]
+      summary: "Create part"
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema: { $ref: "#/definitions/InventoryPayload" }
+      responses:
+        201:
+          description: "Created"
+          schema: { $ref: "#/definitions/InventoryResponse" }
+        400:
+          description: "Validation error or name exists"
+          schema: { $ref: "#/definitions/ErrorMessage" }
+
+    get:
+      tags: [Inventory]
+      summary: "List parts"
+      responses:
+        200:
+          description: "OK"
+          schema:
+            type: array
+            items: { $ref: "#/definitions/InventoryResponse" }
+
+  /inventory/{part_id}:
+    get:
+      tags: [Inventory]
+      summary: "Get part"
+      parameters:
+        - name: part_id
+          in: path
+          required: true
+          type: integer
+      responses:
+        200:
+          description: "OK"
+          schema: { $ref: "#/definitions/InventoryResponse" }
+        404:
+          description: "Not found"
+          schema: { $ref: "#/definitions/ErrorMessage" }
+
+    put:
+      tags: [Inventory]
+      summary: "Update part"
+      parameters:
+        - name: part_id
+          in: path
+          required: true
+          type: integer
+        - in: body
+          name: body
+          required: true
+          schema: { $ref: "#/definitions/InventoryPayload" }
+      responses:
+        200:
+          description: "OK"
+          schema: { $ref: "#/definitions/InventoryResponse" }
+        404:
+          description: "Not found"
+          schema: { $ref: "#/definitions/ErrorMessage" }
+
+    delete:
+      tags: [Inventory]
+      summary: "Delete part"
+      parameters:
+        - name: part_id
+          in: path
+          required: true
+          type: integer
+      responses:
+        200:
+          description: "OK"
+          schema: { $ref: "#/definitions/DeleteResponse" }
+        404:
+          description: "Not found"
+          schema: { $ref: "#/definitions/ErrorMessage" }
+
+  # -------------------- Service Tickets --------------------
+  /service-tickets/:
+    post:
+      tags: [Tickets]
+      summary: "Create ticket (auth)"
+      description: "Requires Bearer token. Rate limited: 5 per minute."
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema: { $ref: "#/definitions/TicketCreatePayload" }
+      responses:
+        201:
+          description: "Created"
+          schema: { $ref: "#/definitions/TicketResponse" }
+        401:
+          description: "Missing/invalid token"
+          schema: { $ref: "#/definitions/ErrorMessage" }
+        429:
+          description: "Rate limit exceeded"
+          schema: { $ref: "#/definitions/ErrorMessage" }
+
+    get:
+      tags: [Tickets]
+      summary: "List tickets"
+      description: "Cached for 60 seconds."
+      responses:
+        200:
+          description: "OK"
+          schema:
+            type: array
+            items: { $ref: "#/definitions/TicketResponse" }
+
+  /service-tickets/{ticket_id}:
+    get:
+      tags: [Tickets]
+      summary: "Get ticket (auth, owner only)"
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: ticket_id
+          in: path
+          required: true
+          type: integer
+      responses:
+        200:
+          description: "OK"
+          schema: { $ref: "#/definitions/TicketResponse" }
+        401:
+          description: "Missing/invalid token"
+          schema: { $ref: "#/definitions/ErrorMessage" }
+        403:
+          description: "Forbidden (not owner)"
+          schema: { $ref: "#/definitions/ErrorMessage" }
+        404:
+          description: "Not found"
+          schema: { $ref: "#/definitions/ErrorMessage" }
+
+    put:
+      tags: [Tickets]
+      summary: "Update ticket (auth, owner only)"
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: ticket_id
+          in: path
+          required: true
+          type: integer
+        - in: body
+          name: body
+          required: true
+          schema: { $ref: "#/definitions/TicketUpdatePayload" }
+      responses:
+        200:
+          description: "OK"
+          schema: { $ref: "#/definitions/TicketResponse" }
+        403:
+          description: "Forbidden"
+          schema: { $ref: "#/definitions/ErrorMessage" }
+        404:
+          description: "Not found"
+          schema: { $ref: "#/definitions/ErrorMessage" }
+
+    delete:
+      tags: [Tickets]
+      summary: "Delete ticket (auth, owner only)"
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: ticket_id
+          in: path
+          required: true
+          type: integer
+      responses:
+        200:
+          description: "OK"
+          schema: { $ref: "#/definitions/DeleteResponse" }
+        403:
+          description: "Forbidden"
+          schema: { $ref: "#/definitions/ErrorMessage" }
+        404:
+          description: "Not found"
+          schema: { $ref: "#/definitions/ErrorMessage" }
+
+  /service-tickets/{ticket_id}/edit:
+    put:
+      tags: [Tickets]
+      summary: "Bulk add/remove mechanics (auth, owner only)"
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: ticket_id
+          in: path
+          required: true
+          type: integer
+        - in: body
+          name: body
+          required: true
+          schema: { $ref: "#/definitions/EditTicketMechanicsPayload" }
+      responses:
+        200:
+          description: "OK"
+        400:
+          description: "Bad payload"
+          schema: { $ref: "#/definitions/ErrorMessage" }
+        403:
+          description: "Forbidden"
+          schema: { $ref: "#/definitions/ErrorMessage" }
+        404:
+          description: "Not found"
+          schema: { $ref: "#/definitions/ErrorMessage" }
+
+  /service-tickets/{ticket_id}/assign-mechanic/{mechanic_id}:
+    put:
+      tags: [Tickets]
+      summary: "Assign mechanic to ticket"
+      parameters:
+        - name: ticket_id
+          in: path
+          required: true
+          type: integer
+        - name: mechanic_id
+          in: path
+          required: true
+          type: integer
+      responses:
+        200:
+          description: "OK"
+          schema: { $ref: "#/definitions/TicketResponse" }
+        404:
+          description: "Ticket or mechanic not found"
+          schema: { $ref: "#/definitions/ErrorMessage" }
+
+  /service-tickets/{ticket_id}/remove-mechanic/{mechanic_id}:
+    put:
+      tags: [Tickets]
+      summary: "Remove mechanic from ticket"
+      parameters:
+        - name: ticket_id
+          in: path
+          required: true
+          type: integer
+        - name: mechanic_id
+          in: path
+          required: true
+          type: integer
+      responses:
+        200:
+          description: "OK"
+        400:
+          description: "Mechanic not assigned"
+          schema: { $ref: "#/definitions/ErrorMessage" }
+        404:
+          description: "Ticket or mechanic not found"
+          schema: { $ref: "#/definitions/ErrorMessage" }
+
+  /service-tickets/{ticket_id}/add-part/{part_id}:
+    put:
+      tags: [Tickets]
+      summary: "Add part to ticket (auth, owner only)"
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: ticket_id
+          in: path
+          required: true
+          type: integer
+        - name: part_id
+          in: path
+          required: true
+          type: integer
+      responses:
+        200:
+          description: "OK"
+          schema: { $ref: "#/definitions/TicketResponse" }
+        403:
+          description: "Forbidden"
+          schema: { $ref: "#/definitions/ErrorMessage" }
+        404:
+          description: "Ticket or part not found"
+          schema: { $ref: "#/definitions/ErrorMessage" }
+
+
+definitions:
+  # ---- Common error shapes ----
+  ErrorMessage:
+    type: object
+    properties:
+      error:
+        type: string
+      message:
+        type: string
+
+  # ---- Customers ----
+  CustomerCreatePayload:
+    type: object
+    required: [name, email, password]
+    properties:
+      name: { type: string }
+      email: { type: string }
+      phone: { type: string }
+      password: { type: string }
+
+  CustomerResponse:
+    type: object
+    properties:
+      id: { type: integer }
+      name: { type: string }
+      email: { type: string }
+      phone: { type: string }
+
+  CustomerLoginPayload:
+    type: object
+    required: [email, password]
+    properties:
+      email: { type: string }
+      password: { type: string }
+
+  CustomerLoginResponse:
+    type: object
+    properties:
+      status: { type: string }
+      message: { type: string }
+      auth_token: { type: string }
+
+  CustomersListResponse:
+    type: object
+    properties:
+      limit: { type: integer }
+      offset: { type: integer }
+      count: { type: integer }
+      customers:
+        type: array
+        items:
+          $ref: "#/definitions/CustomerResponse"
+
+  DeleteResponse:
+    type: object
+    properties:
+      message: { type: string }
+
+  # ---- Mechanics ----
+  MechanicPayload:
+    type: object
+    required: [name, email, salary]
+    properties:
+      name: { type: string }
+      email: { type: string }
+      phone: { type: string }
+      salary: { type: number, format: float }
+
+  MechanicResponse:
+    type: object
+    properties:
+      id: { type: integer }
+      name: { type: string }
+      email: { type: string }
+      phone: { type: string }
+      salary: { type: number, format: float }
+
+  MechanicMostTicketsResponse:
+    type: object
+    properties:
+      id: { type: integer }
+      name: { type: string }
+      email: { type: string }
+      phone: { type: string }
+      salary: { type: number, format: float }
+      tickets_count: { type: integer }
+
+  # ---- Inventory ----
+  InventoryPayload:
+    type: object
+    required: [name, price]
+    properties:
+      name: { type: string }
+      price: { type: number, format: float }
+
+  InventoryResponse:
+    type: object
+    properties:
+      id: { type: integer }
+      name: { type: string }
+      price: { type: number, format: float }
+
+  # ---- Tickets ----
+  TicketCreatePayload:
+    type: object
+    required: [VIN, service_date, service_desc]
+    properties:
+      VIN: { type: string }
+      service_date: { type: string }
+      service_desc: { type: string }
+
+  TicketUpdatePayload:
+    type: object
+    required: [VIN, service_date, service_desc, customer_id]
+    properties:
+      VIN: { type: string }
+      service_date: { type: string }
+      service_desc: { type: string }
+      customer_id: { type: integer }
+
+  TicketResponse:
+    type: object
+    properties:
+      id: { type: integer }
+      VIN: { type: string }
+      service_date: { type: string }
+      service_desc: { type: string }
+      customer_id: { type: integer }
+
+  EditTicketMechanicsPayload:
+    type: object
+    properties:
+      add_ids:
+        type: array
+        items: { type: integer }
+      remove_ids:
+        type: array
+        items: { type: integer }

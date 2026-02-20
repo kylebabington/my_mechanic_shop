@@ -2,6 +2,8 @@
 
 A RESTful Flask API for managing a mechanic shop: **customers**, **mechanics**, **service tickets**, and **inventory**. It supports customer registration, JWT-based authentication, pagination, rate limiting, and in-memory caching. API documentation is served via Swagger UI.
 
+**Quick start (tests only):** `pip install -r requirements.txt && pip install pytest && python -m pytest tests/ -v` — no database or `.env` required.
+
 ---
 
 ## Table of Contents
@@ -32,7 +34,7 @@ A RESTful Flask API for managing a mechanic shop: **customers**, **mechanics**, 
 - **Security**: Password hashing (Werkzeug), JWT (python-jose) for protected routes
 - **API behavior**: Rate limiting (Flask-Limiter), optional response caching (Flask-Caching), JSON request/response with Marshmallow validation
 - **Docs**: OpenAPI 2.0 spec (`swagger.yaml`) and Swagger UI at `/api/docs`
-- **Testing**: unittest-based test suite for customers, mechanics, service tickets, and inventory; uses SQLite via `TestingConfig`
+- **Testing**: pytest/unittest test suite for customers, mechanics, service tickets, and inventory; uses SQLite via `TestingConfig`
 
 ---
 
@@ -103,7 +105,7 @@ my_mechanic_shop/
 ## Prerequisites
 
 - **Python 3.10+** (project uses type hints and modern syntax)
-- **MySQL** server (e.g. local or Docker)
+- **MySQL** server for running the API (e.g. local or Docker); not required for running tests (tests use SQLite)
 - **pip** (or another Python package manager)
 
 ---
@@ -135,10 +137,10 @@ my_mechanic_shop/
    pip install -r requirements.txt
    ```
 
-   For Swagger UI and migrations (if not in `requirements.txt`):
+   For full local development (Swagger UI, database migrations):
 
    ```bash
-   pip install flask-swagger-ui flask-migrate pyyaml
+   pip install flask-swagger-ui flask-migrate pyyaml pytest
    ```
 
 4. **Create the MySQL database**:
@@ -194,7 +196,12 @@ By default the app runs with `debug=True` and is available at **http://localhost
 To use a specific config (e.g. development):
 
 ```bash
+# Windows (PowerShell/CMD):
 set FLASK_ENV=development
+python app.py
+
+# macOS/Linux:
+export FLASK_ENV=development
 python app.py
 ```
 
@@ -228,9 +235,9 @@ Ensure `DATABASE_URL` (and optionally `FLASK_APP=app.py`) is set when running th
 
 ## Testing
 
-The project includes a unittest-based test suite that uses **TestingConfig** with a SQLite database for tests. No MySQL or `.env` is required to run tests.
+The project includes a test suite (pytest or unittest) that uses **TestingConfig** with a SQLite in-memory/file database. No MySQL or `.env` is required to run tests.
 
-**Run all tests:**
+**Run all tests (recommended):**
 
 ```bash
 python -m pytest tests/ -v
@@ -242,7 +249,7 @@ Or with the standard library runner:
 python -m unittest discover -s tests -v
 ```
 
-Tests cover customers, mechanics, service tickets, and inventory (CRUD, auth, pagination, and relationships). Each test module uses a fresh app context and drops/recreates tables in `setUp`/`tearDown`.
+Tests cover customers, mechanics, service tickets, and inventory (CRUD, auth, pagination, and relationships). Each test module uses a fresh app context and isolates database state.
 
 ---
 
@@ -268,7 +275,7 @@ Tests cover customers, mechanics, service tickets, and inventory (CRUD, auth, pa
 - **Login:** `POST /customers/login` with `{ "email", "password" }`. Response includes `auth_token` (JWT).
 - **Protected routes:** Send the token in the header:
   ```http
-  All protected enpoints require:
+  All protected endpoints require:
   Authorization: Bearer <auth_token>
   ```
 - **Token lifetime:** JWTs are configured with a 1-hour expiration (see `application/utils/util.py`).
@@ -287,7 +294,7 @@ This serves **Swagger UI** and loads the OpenAPI 2.0 spec from `application/stat
 
 ## Testing with Postman
 
-A Postman collection is included: **`My Mechanic Shop API.postman_collection.json`**. Import it into Postman to run predefined requests. For auth-required endpoints, set the collection or request variable for the token (e.g. after login) and use it in the `Authorization: Bearer ...` header.
+A Postman collection is included in the project root: **`My Mechanic Shop API.postman_collection.json`**. Import it into Postman to run predefined requests. For auth-required endpoints, set the collection or request variable for the token (e.g. after login) and use it in the `Authorization: Bearer ...` header.
 
 ---
 

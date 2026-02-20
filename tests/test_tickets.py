@@ -440,4 +440,50 @@ class TestTickets(unittest.TestCase):
         )
         self.assertEqual(delete_response.status_code, 403)
 
-    
+    def test_list_tickets(self):
+        # create + login customer
+        self.create_customer()
+        token = self.login_customer_get_token()
+
+        # create a ticket so list isn't empty
+        create_ticket_response = self.client.post("/service-tickets/", json={
+            "VIN": "1HGBH41JXMN109186",
+            "service_date": "2026-01-01",
+            "service_desc": "List tickets test"
+        }, headers=self.auth_headers(token))
+
+        self.assertEqual(create_ticket_response.status_code, 201)
+
+        # list tickets
+        response = self.client.get("/service-tickets/")
+        self.assertEqual(response.status_code, 200)
+
+        data = response.get_json()
+        self.assertIsInstance(data, list)
+        self.assertGreaterEqual(len(data), 1)
+
+    def test_owner_can_delete_ticket(self):
+        # ------------------------------------------------------------
+        # Create + login owner customer
+        # ------------------------------------------------------------
+        self.create_customer()
+        token = self.login_customer_get_token()
+
+        # Create a ticket owned by this customer
+        create_ticket_response = self.client.post("/service-tickets/", json={
+            "VIN": "1HGBH41JXMN109186",
+            "service_date": "2026-01-01",
+            "service_desc": "Owner ticket"
+        }, headers=self.auth_headers(token))
+        self.assertEqual(create_ticket_response.status_code, 201)
+
+        ticket_id = create_ticket_response.get_json()["id"]
+
+        # ------------------------------------------------------------
+        # Successful delete
+        # ------------------------------------------------------------
+        delete_response = self.client.delete(
+            f"/service-tickets/{ticket_id}",
+            headers=self.auth_headers(token)
+        )
+        self.assertIn(delete_response.status_code, [200, 204])

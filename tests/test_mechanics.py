@@ -99,3 +99,52 @@ class TestMechanics(unittest.TestCase):
         data = response.get_json()
 
         self.assertIsInstance(data, list)
+
+    def test_list_mechanics(self):
+        # create one mechanic so list isn't empty
+        self.client.post("/mechanics/", json={
+            "name": "Bob Smith",
+            "email": "bob@garage.com",
+            "phone": "1234567890",
+            "salary": 50000
+        })
+
+        response = self.client.get("/mechanics/")
+        self.assertEqual(response.status_code, 200)
+
+        data = response.get_json()
+        self.assertIsInstance(data, list)
+        self.assertGreaterEqual(len(data), 1)
+
+    def test_get_mechanic_by_id_success(self):
+        # ------------------------------------------------------------
+        # Create a mechanic
+        # ------------------------------------------------------------
+        create_response = self.client.post("/mechanics/", json={
+            "name": "Bob Smith",
+            "email": "bob@garage.com",
+            "phone": "1234567890",
+            "salary": 50000
+        })
+        self.assertEqual(create_response.status_code, 201)
+
+        mechanic_id = create_response.get_json()["id"]
+
+        # ------------------------------------------------------------
+        # GET the mechanic by id
+        # ------------------------------------------------------------
+        get_response = self.client.get(f"/mechanics/{mechanic_id}")
+        self.assertEqual(get_response.status_code, 200)
+
+        # ------------------------------------------------------------
+        # response body exists
+        # ------------------------------------------------------------
+        data = get_response.get_json()
+        self.assertIsInstance(data, dict)
+        self.assertEqual(data["id"], mechanic_id)
+        self.assertEqual(data["email"], "bob@garage.com")
+
+    def test_get_mechanic_by_id_404(self):
+        # Negative: mechanic doesn't exist
+        response = self.client.get("/mechanics/999999")
+        self.assertEqual(response.status_code, 404)

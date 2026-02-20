@@ -16,9 +16,10 @@ class Customer(Base):
 
     password_hash: Mapped[str] = mapped_column(db.String(255), nullable=False)
 
-    # 1-to-Many: Customer -> ServiceTicket
+    # 1-to-Many: Customer -> ServiceTicket (cascade delete so tickets are removed when customer is deleted)
     service_tickets: Mapped[List["ServiceTicket"]] = relationship(
-        back_populates="customer"
+        back_populates="customer",
+        cascade="all, delete-orphan",
     )
 
     def set_password(self, plain_password: str) -> None:

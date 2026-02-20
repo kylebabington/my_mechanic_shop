@@ -37,9 +37,19 @@ paths:
         201:
           description: "Created"
           schema: { $ref: "#/definitions/CustomerResponse" }
+          examples:
+            application/json:
+              id: 1
+              name: "John Doe"
+              email: "john.doe@example.com"
+              phone: "1234567890"
         400:
           description: "Validation error or email already exists"
           schema: { $ref: "#/definitions/ErrorMessage" }
+          examples:
+            application/json:
+              error: "Bad Request"
+              message: "Email already exists"
 
     get:
       tags: [Customers]
@@ -58,14 +68,33 @@ paths:
         200:
           description: "OK"
           schema: { $ref: "#/definitions/CustomersListResponse" }
+          examples:
+            application/json:
+              customers:
+                - id: 1
+                  name: "Jane Doe"
+                  email: "jane.doe@example.com"
+                  phone: "123-456-7890"
+                - id: 2
+                  name: "John Smith"
+                  email: "john.smith@example.com"
+                  phone: "098-765-4321"
+              limit: 10
+              offset: 0
+              total: 2
         400:
           description: "Bad pagination values"
           schema: { $ref: "#/definitions/ErrorMessage" }
+          examples:
+            application/json:
+              error: "Bad Request"
+              message: "Invalid limit or offset"
 
   /customers/login:
     post:
       tags: [Customers]
       summary: "Login (returns auth token)"
+      description: "Returns a JWT token for authentication."
       parameters:
         - in: body
           name: body
@@ -75,14 +104,23 @@ paths:
         200:
           description: "OK"
           schema: { $ref: "#/definitions/CustomerLoginResponse" }
+          examples:
+            application/json:
+              auth_token: "1234567890..."
+              customer_id: 1
         401:
           description: "Invalid credentials"
           schema: { $ref: "#/definitions/ErrorMessage" }
+          examples:
+            application/json:
+              error: "Unauthorized"
+              message: "Invalid email or password."
 
   /customers/my-tickets:
     get:
       tags: [Customers]
       summary: "My tickets (auth)"
+      description: "Returns a list of tickets for the logged-in customer."
       security:
         - bearerAuth: []
       responses:
@@ -91,14 +129,26 @@ paths:
           schema:
             type: array
             items: { $ref: "#/definitions/TicketResponse" }
+          examples:
+            application/json:
+              - id: 10
+                VIN: "1HGCM82633A004352"
+                service_date: "2025-02-18"
+                service_desc: "Oil change"
+                customer_id: 1
         401:
           description: "Missing/invalid token"
           schema: { $ref: "#/definitions/ErrorMessage" }
+          examples:
+            application/json:
+              error: "Unauthorized"
+              message: "Missing/invalid token"
 
   /customers/me:
     put:
       tags: [Customers]
       summary: "Update logged-in customer (auth)"
+      description: "Updates the logged-in customer's information."
       security:
         - bearerAuth: []
       parameters:
@@ -110,27 +160,42 @@ paths:
         200:
           description: "OK"
           schema: { $ref: "#/definitions/CustomerResponse" }
+          examples:
+            application/json:
+              id: 1
+              name: "John Doe Updated"
+              email: "john.doe.updated@example.com"
+              phone: "2345678910"
         401:
           description: "Missing/invalid token"
           schema: { $ref: "#/definitions/ErrorMessage" }
+          examples:
+            application/json:
+              error: "Unauthorized"
+              message: "Missing/invalid token"
 
     delete:
       tags: [Customers]
       summary: "Delete logged-in customer (auth)"
+      description: "Deletes the logged-in customer."
       security:
         - bearerAuth: []
       responses:
-        200:
-          description: "OK"
-          schema: { $ref: "#/definitions/DeleteResponse" }
+        204:
+          description: "No Content (customer deleted successfully)"
         401:
           description: "Missing/invalid token"
           schema: { $ref: "#/definitions/ErrorMessage" }
+          examples:
+            application/json:
+              error: "Unauthorized"
+              message: "Missing/invalid token"
 
   /customers/{customer_id}:
     get:
       tags: [Customers]
       summary: "Get customer by id"
+      description: "Returns a customer by their ID."
       parameters:
         - name: customer_id
           in: path
@@ -140,15 +205,26 @@ paths:
         200:
           description: "OK"
           schema: { $ref: "#/definitions/CustomerResponse" }
+          examples:
+            application/json:
+              id: 1
+              name: "John Doe"
+              email: "john.doe@example.com"
+              phone: "1234567890"
         404:
           description: "Not found"
           schema: { $ref: "#/definitions/ErrorMessage" }
+          examples:
+            application/json:
+              error: "Not Found"
+              message: "Customer not found"
 
   # -------------------- Mechanics --------------------
   /mechanics/:
     post:
       tags: [Mechanics]
       summary: "Create mechanic"
+      description: "Creates a new mechanic."
       parameters:
         - in: body
           name: body
@@ -158,35 +234,75 @@ paths:
         201:
           description: "Created"
           schema: { $ref: "#/definitions/MechanicResponse" }
+          examples:
+            application/json:
+              id: 1
+              name: "John Doe"
+              email: "john.doe@garage.com"
+              phone: "1234567890"
+              salary: 50000.00
         400:
           description: "Validation error or email exists"
           schema: { $ref: "#/definitions/ErrorMessage" }
+          examples:
+            application/json:
+              error: "Bad Request"
+              message: "Validation error or email exists"
 
     get:
       tags: [Mechanics]
       summary: "List mechanics"
+      description: "Returns a list of mechanics."
       responses:
         200:
           description: "OK"
           schema:
             type: array
             items: { $ref: "#/definitions/MechanicResponse" }
+          examples:
+            application/json:
+              - id: 1
+                name: "John Doe"
+                email: "john.doe@garage.com"
+                phone: "1234567890"
+                salary: 50000.00
+              - id: 2
+                name: "Jane Smith"
+                email: "jane.smith@garage.com"
+                phone: "0987654321"
+                salary: 60000.00
 
   /mechanics/most-tickets:
     get:
       tags: [Mechanics]
       summary: "Mechanics by most tickets"
+      description: "Returns a list of mechanics by the number of tickets they have."
       responses:
         200:
           description: "OK"
           schema:
             type: array
             items: { $ref: "#/definitions/MechanicMostTicketsResponse" }
+          examples:
+            application/json:
+              - id: 1
+                name: "John Doe"
+                email: "john.doe@garage.com"
+                phone: "1234567890"
+                salary: 50000.00
+                tickets_count: 10
+              - id: 2
+                name: "Jane Smith"
+                email: "jane.smith@garage.com"
+                phone: "0987654321"
+                salary: 60000.00
+                tickets_count: 8
 
   /mechanics/{mechanic_id}:
     get:
       tags: [Mechanics]
       summary: "Get mechanic by id"
+      description: "Returns a mechanic by their ID."
       parameters:
         - name: mechanic_id
           in: path
@@ -196,13 +312,25 @@ paths:
         200:
           description: "OK"
           schema: { $ref: "#/definitions/MechanicResponse" }
+          examples:
+            application/json:
+              id: 1
+              name: "John Doe"
+              email: "john.doe@garage.com"
+              phone: "1234567890"
+              salary: 50000.00
         404:
           description: "Not found"
           schema: { $ref: "#/definitions/ErrorMessage" }
+          examples:
+            application/json:
+              error: "Not Found"
+              message: "Mechanic not found"
 
     put:
       tags: [Mechanics]
       summary: "Update mechanic"
+      description: "Updates a mechanic's information."
       parameters:
         - name: mechanic_id
           in: path
@@ -216,13 +344,25 @@ paths:
         200:
           description: "OK"
           schema: { $ref: "#/definitions/MechanicResponse" }
+          examples:
+            application/json:
+              id: 1
+              name: "John Doe Updated"
+              email: "john.doe.updated@garage.com"
+              phone: "1234567890"
+              salary: 55000.00
         404:
           description: "Not found"
           schema: { $ref: "#/definitions/ErrorMessage" }
+          examples:
+            application/json:
+              error: "Not Found"
+              message: "Mechanic not found"
 
     delete:
       tags: [Mechanics]
       summary: "Delete mechanic"
+      description: "Deletes a mechanic."
       parameters:
         - name: mechanic_id
           in: path
@@ -232,15 +372,23 @@ paths:
         200:
           description: "OK"
           schema: { $ref: "#/definitions/DeleteResponse" }
+          examples:
+            application/json:
+              message: "Mechanic deleted successfully"
         404:
           description: "Not found"
           schema: { $ref: "#/definitions/ErrorMessage" }
+          examples:
+            application/json:
+              error: "Not Found"
+              message: "Mechanic not found"
 
   # -------------------- Inventory --------------------
   /inventory/:
     post:
       tags: [Inventory]
       summary: "Create part"
+      description: "Creates a new part."
       parameters:
         - in: body
           name: body
@@ -250,24 +398,43 @@ paths:
         201:
           description: "Created"
           schema: { $ref: "#/definitions/InventoryResponse" }
+          examples:
+            application/json:
+              id: 1
+              name: "Brake Pad"
+              price: 100.00
         400:
           description: "Validation error or name exists"
           schema: { $ref: "#/definitions/ErrorMessage" }
+          examples:
+            application/json:
+              error: "Bad Request"
+              message: "Validation error or name exists"
 
     get:
       tags: [Inventory]
       summary: "List parts"
+      description: "Returns a list of parts."
       responses:
         200:
           description: "OK"
           schema:
             type: array
             items: { $ref: "#/definitions/InventoryResponse" }
+          examples:
+            application/json:
+              - id: 1
+                name: "Brake Pad"
+                price: 100.00
+              - id: 2
+                name: "Oil Filter"
+                price: 20.00
 
   /inventory/{part_id}:
     get:
       tags: [Inventory]
       summary: "Get part"
+      description: "Returns a part by their ID."
       parameters:
         - name: part_id
           in: path
@@ -277,13 +444,23 @@ paths:
         200:
           description: "OK"
           schema: { $ref: "#/definitions/InventoryResponse" }
+          examples:
+            application/json:
+              id: 1
+              name: "Brake Pad"
+              price: 100.00
         404:
           description: "Not found"
           schema: { $ref: "#/definitions/ErrorMessage" }
+          examples:
+            application/json:
+              error: "Not Found"
+              message: "Part not found"
 
     put:
       tags: [Inventory]
       summary: "Update part"
+      description: "Updates a part's information."
       parameters:
         - name: part_id
           in: path
@@ -297,13 +474,23 @@ paths:
         200:
           description: "OK"
           schema: { $ref: "#/definitions/InventoryResponse" }
+          examples:
+            application/json:
+              id: 1
+              name: "Brake Pad Updated"
+              price: 150.00
         404:
           description: "Not found"
           schema: { $ref: "#/definitions/ErrorMessage" }
+          examples:
+            application/json:
+              error: "Not Found"
+              message: "Part not found"
 
     delete:
       tags: [Inventory]
       summary: "Delete part"
+      description: "Deletes a part."
       parameters:
         - name: part_id
           in: path
@@ -313,9 +500,16 @@ paths:
         200:
           description: "OK"
           schema: { $ref: "#/definitions/DeleteResponse" }
+          examples:
+            application/json:
+              message: "Part deleted successfully"
         404:
           description: "Not found"
           schema: { $ref: "#/definitions/ErrorMessage" }
+          examples:
+            application/json:
+              error: "Not Found"
+              message: "Part not found"
 
   # -------------------- Service Tickets --------------------
   /service-tickets/:
@@ -334,12 +528,28 @@ paths:
         201:
           description: "Created"
           schema: { $ref: "#/definitions/TicketResponse" }
+          examples:
+            application/json:
+              id: 10
+              VIN: "1HGCM82633A004352"
+              service_date: "2025-02-18"
+              service_desc: "Oil change"
+              customer_id: 1
+
         401:
           description: "Missing/invalid token"
           schema: { $ref: "#/definitions/ErrorMessage" }
+          examples:
+            application/json:
+              error: "Unauthorized"
+              message: "Missing/invalid token"
         429:
           description: "Rate limit exceeded"
           schema: { $ref: "#/definitions/ErrorMessage" }
+          examples:
+            application/json:
+              error: "Too Many Requests"
+              message: "Rate limit exceeded"
 
     get:
       tags: [Tickets]
@@ -351,11 +561,19 @@ paths:
           schema:
             type: array
             items: { $ref: "#/definitions/TicketResponse" }
+          examples:
+            application/json:
+              - id: 10
+                VIN: "1HGCM82633A004352"
+                service_date: "2025-02-18"
+                service_desc: "Oil change"
+                customer_id: 1
 
   /service-tickets/{ticket_id}:
     get:
       tags: [Tickets]
       summary: "Get ticket (auth, owner only)"
+      description: "Returns a ticket by their ID."
       security:
         - bearerAuth: []
       parameters:
@@ -367,19 +585,39 @@ paths:
         200:
           description: "OK"
           schema: { $ref: "#/definitions/TicketResponse" }
+          examples:
+            application/json:
+              id: 10
+              VIN: "1HGCM82633A004352"
+              service_date: "2025-02-18"
+              service_desc: "Oil change"
+              customer_id: 1
         401:
           description: "Missing/invalid token"
           schema: { $ref: "#/definitions/ErrorMessage" }
+          examples:
+            application/json:
+              error: "Unauthorized"
+              message: "Missing/invalid token"
         403:
           description: "Forbidden (not owner)"
           schema: { $ref: "#/definitions/ErrorMessage" }
+          examples:
+            application/json:
+              error: "Forbidden"
+              message: "Forbidden (not owner)"
         404:
           description: "Not found"
           schema: { $ref: "#/definitions/ErrorMessage" }
+          examples:
+            application/json:
+              error: "Not Found"
+              message: "Ticket not found"
 
     put:
       tags: [Tickets]
       summary: "Update ticket (auth, owner only)"
+      description: "Updates a ticket's information."
       security:
         - bearerAuth: []
       parameters:
@@ -395,16 +633,32 @@ paths:
         200:
           description: "OK"
           schema: { $ref: "#/definitions/TicketResponse" }
+          examples:
+            application/json:
+              id: 10
+              VIN: "1HGCM82633A004352"
+              service_date: "2025-02-18"
+              service_desc: "Oil change"
+              customer_id: 1
         403:
           description: "Forbidden"
           schema: { $ref: "#/definitions/ErrorMessage" }
+          examples:
+            application/json:
+              error: "Forbidden"
+              message: "Forbidden (not owner)"
         404:
           description: "Not found"
           schema: { $ref: "#/definitions/ErrorMessage" }
+          examples:
+            application/json:
+              error: "Not Found"
+              message: "Ticket not found"
 
     delete:
       tags: [Tickets]
       summary: "Delete ticket (auth, owner only)"
+      description: "Deletes a ticket."
       security:
         - bearerAuth: []
       parameters:
@@ -416,17 +670,29 @@ paths:
         200:
           description: "OK"
           schema: { $ref: "#/definitions/DeleteResponse" }
+          examples:
+            application/json:
+              message: "Ticket deleted successfully"
         403:
           description: "Forbidden"
           schema: { $ref: "#/definitions/ErrorMessage" }
+          examples:
+            application/json:
+              error: "Forbidden"
+              message: "Forbidden (not owner)"
         404:
           description: "Not found"
           schema: { $ref: "#/definitions/ErrorMessage" }
+          examples:
+            application/json:
+              error: "Not Found"
+              message: "Ticket not found"
 
   /service-tickets/{ticket_id}/edit:
     put:
       tags: [Tickets]
       summary: "Bulk add/remove mechanics (auth, owner only)"
+      description: "Bulk adds or removes mechanics from a ticket."
       security:
         - bearerAuth: []
       parameters:
@@ -441,20 +707,41 @@ paths:
       responses:
         200:
           description: "OK"
+          schema: { $ref: "#/definitions/TicketResponse" }
+          examples:
+            application/json:
+              id: 10
+              VIN: "1HGCM82633A004352"
+              service_date: "2025-02-18"
+              service_desc: "Oil change"
+              customer_id: 1
         400:
           description: "Bad payload"
           schema: { $ref: "#/definitions/ErrorMessage" }
+          examples:
+            application/json:
+              error: "Bad Request"
+              message: "Bad payload"
         403:
           description: "Forbidden"
           schema: { $ref: "#/definitions/ErrorMessage" }
+          examples:
+            application/json:
+              error: "Forbidden"
+              message: "Forbidden (not owner)"
         404:
           description: "Not found"
           schema: { $ref: "#/definitions/ErrorMessage" }
+          examples:
+            application/json:
+              error: "Not Found"
+              message: "Ticket not found"
 
   /service-tickets/{ticket_id}/assign-mechanic/{mechanic_id}:
     put:
       tags: [Tickets]
       summary: "Assign mechanic to ticket"
+      description: "Assigns a mechanic to a ticket."
       parameters:
         - name: ticket_id
           in: path
@@ -468,14 +755,26 @@ paths:
         200:
           description: "OK"
           schema: { $ref: "#/definitions/TicketResponse" }
+          examples:
+            application/json:
+              id: 10
+              VIN: "1HGCM82633A004352"
+              service_date: "2025-02-18"
+              service_desc: "Oil change"
+              customer_id: 1
         404:
           description: "Ticket or mechanic not found"
           schema: { $ref: "#/definitions/ErrorMessage" }
+          examples:
+            application/json:
+              error: "Not Found"
+              message: "Ticket or mechanic not found"
 
   /service-tickets/{ticket_id}/remove-mechanic/{mechanic_id}:
     put:
       tags: [Tickets]
       summary: "Remove mechanic from ticket"
+      description: "Removes a mechanic from a ticket."
       parameters:
         - name: ticket_id
           in: path
@@ -488,17 +787,34 @@ paths:
       responses:
         200:
           description: "OK"
+          schema: { $ref: "#/definitions/TicketResponse" }
+          examples:
+            application/json:
+              id: 10
+              VIN: "1HGCM82633A004352"
+              service_date: "2025-02-18"
+              service_desc: "Oil change"
+              customer_id: 1
         400:
           description: "Mechanic not assigned"
           schema: { $ref: "#/definitions/ErrorMessage" }
+          examples:
+            application/json:
+              error: "Bad Request"
+              message: "Mechanic not assigned"
         404:
           description: "Ticket or mechanic not found"
           schema: { $ref: "#/definitions/ErrorMessage" }
+          examples:
+            application/json:
+              error: "Not Found"
+              message: "Ticket or mechanic not found"
 
   /service-tickets/{ticket_id}/add-part/{part_id}:
     put:
       tags: [Tickets]
       summary: "Add part to ticket (auth, owner only)"
+      description: "Adds a part to a ticket."
       security:
         - bearerAuth: []
       parameters:
@@ -514,12 +830,27 @@ paths:
         200:
           description: "OK"
           schema: { $ref: "#/definitions/TicketResponse" }
+          examples:
+            application/json:
+              id: 10
+              VIN: "1HGCM82633A004352"
+              service_date: "2025-02-18"
+              service_desc: "Oil change"
+              customer_id: 1
         403:
           description: "Forbidden"
           schema: { $ref: "#/definitions/ErrorMessage" }
+          examples:
+            application/json:
+              error: "Forbidden"
+              message: "Forbidden (not owner)"
         404:
           description: "Ticket or part not found"
           schema: { $ref: "#/definitions/ErrorMessage" }
+          examples:
+            application/json:
+              error: "Not Found"
+              message: "Ticket or part not found"
 
 
 definitions:
@@ -635,21 +966,67 @@ definitions:
 
   TicketUpdatePayload:
     type: object
-    required: [VIN, service_date, service_desc, customer_id]
+    required: [VIN, service_date, service_desc]
     properties:
       VIN: { type: string }
       service_date: { type: string }
       service_desc: { type: string }
-      customer_id: { type: integer }
 
   TicketResponse:
-    type: object
-    properties:
-      id: { type: integer }
-      VIN: { type: string }
-      service_date: { type: string }
-      service_desc: { type: string }
-      customer_id: { type: integer }
+  type: object
+  properties:
+    id:
+      type: integer
+      example: 10
+    VIN:
+      type: string
+      example: "1HGCM82633A004352"
+    service_date:
+      type: string
+      example: "2026-02-19"
+    service_desc:
+      type: string
+      example: "Oil change"
+    customer_id:
+      type: integer
+      example: 1
+    mechanics:
+      type: array
+      items:
+        type: object
+        properties:
+          id:
+            type: integer
+            example: 2
+          name:
+            type: string
+            example: "Bob Smith"
+          email:
+            type: string
+            example: "bob@garage.com"
+          phone:
+            type: string
+            example: "555-222-3333"
+          salary:
+            type: number
+            format: float
+            example: 50000
+    parts:
+      type: array
+      items:
+        type: object
+        properties:
+          id:
+            type: integer
+            example: 5
+          name:
+            type: string
+            example: "Brake Pads"
+          price:
+            type: number
+            format: float
+            example: 79.99
+
 
   EditTicketMechanicsPayload:
     type: object

@@ -15,7 +15,8 @@ class BaseConfig:
 
 class DevelopmentConfig(BaseConfig):
     SQLALCHEMY_DATABASE_URI = os.environ.get("DATABASE_URL")
-    if not SQLALCHEMY_DATABASE_URI:
+    # Require DATABASE_URL only when not running tests (CI sets FLASK_ENV=testing, no .env).
+    if not SQLALCHEMY_DATABASE_URI and os.environ.get("FLASK_ENV", "").lower() != "testing":
         raise ValueError(
             "DATABASE_URL is not set. Copy .env.example to .env and set your database URL."
         )
@@ -40,6 +41,7 @@ class TestingConfig(BaseConfig):
 config_by_name = {
     "development": DevelopmentConfig,
     "DevelopmentConfig": DevelopmentConfig,
+    "testing": TestingConfig,
     "TestingConfig": TestingConfig,
 }
 

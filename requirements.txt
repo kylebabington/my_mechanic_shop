@@ -4,8 +4,9 @@ python-jose[cryptography]
 flask-marshmallow
 marshmallow-sqlalchemy
 mysql-connector-python
-python-dotenv
 flask-limiter
 flask-caching
 flask-swagger-ui
 flask-migrate
+gunicorn
+psycopg2-binary

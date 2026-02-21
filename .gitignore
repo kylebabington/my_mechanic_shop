@@ -30,6 +30,10 @@ venv/
 env/
 .env/
 ENV/
+.env
+.env.local
+.env.example
+
 
 # =============================
 # Environment & secrets (never commit)

@@ -4,9 +4,11 @@
 
 import os
 
-from dotenv import load_dotenv
-
-load_dotenv()  # load .env into os.environ
+try:
+    from dotenv import load_dotenv
+    load_dotenv()  # load .env into os.environ
+except ImportError:
+    pass
 
 class BaseConfig:
     # SQLAlchemy config: keeps Flask-SQLAlchemy from tracking every object change.
@@ -14,13 +16,29 @@ class BaseConfig:
     SECRET_KEY = os.environ.get("SECRET_KEY")
 
 class DevelopmentConfig(BaseConfig):
-    SQLALCHEMY_DATABASE_URI = os.environ.get("DATABASE_URL")
-    # Require DATABASE_URL only when not running tests (CI sets FLASK_ENV=testing, no .env).
+    SQLALCHEMY_DATABASE_URI = (
+        os.environ.get("SQLALCHEMY_DATABASE_URI")
+        or os.environ.get("DATABASE_URL")
+    )
+
     if not SQLALCHEMY_DATABASE_URI and os.environ.get("FLASK_ENV", "").lower() != "testing":
-        raise ValueError(
-            "DATABASE_URL is not set. Copy .env.example to .env and set your database URL."
-        )
+        raise ValueError("Database URL is not set. Set DATABASE_URL or SQLALCHEMY_DATABASE_URI.")
+
     DEBUG = os.environ.get("FLASK_DEBUG", "true").lower() in ("1", "true", "yes")
+
+class ProductionConfig(BaseConfig):
+    DEBUG = False
+    TESTING = False
+
+    SQLALCHEMY_DATABASE_URI = (
+        os.environ.get("SQLALCHEMY_DATABASE_URI")
+        or os.environ.get("DATABASE_URL")
+    )
+
+    if not SQLALCHEMY_DATABASE_URI:
+        raise ValueError("Production database URL not set in environment variables.")
+
+    CACHE_TYPE = "SimpleCache"
 
 
 class TestingConfig(BaseConfig):
@@ -41,7 +59,11 @@ class TestingConfig(BaseConfig):
 config_by_name = {
     "development": DevelopmentConfig,
     "DevelopmentConfig": DevelopmentConfig,
+    
     "testing": TestingConfig,
     "TestingConfig": TestingConfig,
+    
+    "production": ProductionConfig,
+    "ProductionConfig": ProductionConfig,
 }
 

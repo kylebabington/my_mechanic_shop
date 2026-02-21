@@ -7,3 +7,4 @@ mysql-connector-python
 python-dotenv
 flask-limiter
 flask-caching
+flask-swagger-ui

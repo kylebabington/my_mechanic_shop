@@ -31,6 +31,12 @@ def list_mechanics():
 
 @mechanics_bp.route("/<int:mechanic_id>", methods=["GET"])
 def get_mechanic(mechanic_id: int):
+    """
+    Get a single mechanic by ID.
+
+    Path parameter:
+    - mechanic_id (int, required): Unique mechanic ID.
+    """
     mechanic = db.session.get(Mechanic, mechanic_id)
     if not mechanic:
         return jsonify({"error": "Mechanic not found."}), 404
@@ -64,6 +70,12 @@ def mechanics_by_most_tickets():
 
 @mechanics_bp.route("/<int:mechanic_id>", methods=["PUT"])
 def update_mechanic(mechanic_id: int):
+    """
+    Update a mechanic by ID.
+
+    Path parameter:
+    - mechanic_id (int, required): Unique mechanic ID.
+    """
     mechanic = db.session.get(Mechanic, mechanic_id)
     if not mechanic:
         return jsonify({"error": "Mechanic not found."}), 404
@@ -81,6 +93,12 @@ def update_mechanic(mechanic_id: int):
 
 @mechanics_bp.route("/<int:mechanic_id>", methods=["DELETE"])
 def delete_mechanic(mechanic_id: int):
+    """
+    Delete a mechanic by ID.
+
+    Path parameter:
+    - mechanic_id (int, required): Unique mechanic ID.
+    """
     mechanic = db.session.get(Mechanic, mechanic_id)
     if not mechanic:
         return jsonify({"error": "Mechanic not found."}), 404

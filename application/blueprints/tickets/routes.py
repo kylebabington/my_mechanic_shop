@@ -40,6 +40,12 @@ def list_tickets():
 @tickets_bp.route("/<int:ticket_id>", methods=["GET"])
 @token_required
 def get_ticket(customer_id: int, ticket_id: int):
+    """
+    Get a single ticket by ID. Owner-only (customer_id from Bearer token).
+
+    Path parameter:
+    - ticket_id (int, required): Unique service ticket ID.
+    """
     ticket = db.session.get(ServiceTicket, ticket_id)
     if not ticket:
         return jsonify({"error": "Ticket not found."}), 404
@@ -50,6 +56,13 @@ def get_ticket(customer_id: int, ticket_id: int):
 @tickets_bp.route("/<int:ticket_id>", methods=["PUT"])
 @token_required
 def update_ticket(customer_id: int, ticket_id: int):
+    """
+    Update a ticket by ID. Owner-only.
+
+    Path parameter:
+    - ticket_id (int, required): Unique service ticket ID.
+    Body: {"VIN": str, "service_date": str, "service_desc": str}.
+    """
     ticket = db.session.get(ServiceTicket, ticket_id)
     if not ticket:
         return jsonify({"error": "Ticket not found."}), 404
@@ -77,6 +90,12 @@ def update_ticket(customer_id: int, ticket_id: int):
 @tickets_bp.route("/<int:ticket_id>", methods=["DELETE"])
 @token_required
 def delete_ticket(customer_id: int, ticket_id: int):
+    """
+    Delete a ticket by ID. Owner-only.
+
+    Path parameter:
+    - ticket_id (int, required): Unique service ticket ID.
+    """
     ticket = db.session.get(ServiceTicket, ticket_id)
     if not ticket:
         return jsonify({"error": "Ticket not found."}), 404
@@ -93,6 +112,13 @@ def delete_ticket(customer_id: int, ticket_id: int):
 
 @tickets_bp.route("/<int:ticket_id>/assign-mechanic/<int:mechanic_id>", methods=["PUT"])
 def assign_mechanic_to_ticket(ticket_id: int, mechanic_id: int):
+    """
+    Assign a mechanic to a ticket.
+
+    Path parameters:
+    - ticket_id (int, required): Unique service ticket ID.
+    - mechanic_id (int, required): Unique mechanic ID.
+    """
     ticket = db.session.get(ServiceTicket, ticket_id)
     if not ticket:
         return jsonify({"error": "Ticket not found."}), 404
@@ -112,6 +138,13 @@ def assign_mechanic_to_ticket(ticket_id: int, mechanic_id: int):
 
 @tickets_bp.route("/<int:ticket_id>/remove-mechanic/<int:mechanic_id>", methods=["PUT"])
 def remove_mechanic_from_ticket(ticket_id: int, mechanic_id: int):
+    """
+    Remove a mechanic from a ticket.
+
+    Path parameters:
+    - ticket_id (int, required): Unique service ticket ID.
+    - mechanic_id (int, required): Unique mechanic ID (must be currently assigned).
+    """
     ticket = db.session.get(ServiceTicket, ticket_id)
     if not ticket:
         return jsonify({"error": "Ticket not found."}), 404
@@ -136,18 +169,14 @@ def remove_mechanic_from_ticket(ticket_id: int, mechanic_id: int):
 @token_required
 def edit_ticket_mechanics(customer_id: int, ticket_id: int):
     """
-    Update the many-to-many relationship between ServiceTicket and Mechanic.
+    Bulk add/remove mechanics on a ticket. Owner-only (Bearer token).
 
-    Expects JSON like:
-    {
-        "add_ids": [1, 2],
-        "remove_ids": [3]
-    }
+    Path parameter:
+    - ticket_id (int, required): Unique service ticket ID.
 
-    Rules:
-    - Only the owner (customer from token) can edit their ticket
-    - add_ids: mechanics will be appended if not already assigned
-    - remove_ids: mechanics will be removed if currently assigned
+    Body: {"add_ids": [int, ...], "remove_ids": [int, ...]}.
+    - add_ids: mechanic IDs to assign (appended if not already assigned).
+    - remove_ids: mechanic IDs to unassign (must be currently assigned).
     """
 
     ticket = db.session.get(ServiceTicket, ticket_id)
@@ -201,9 +230,11 @@ def edit_ticket_mechanics(customer_id: int, ticket_id: int):
 @token_required
 def add_part_to_ticket(customer_id: int, ticket_id: int, part_id: int):
     """
-    Add ONE inventory part to ONE service ticket.
-    PUT /tickets/<int:ticket_id>/add-part/<int:part_id>
-    Requires Bearer token (customer must own the ticket).
+    Add an inventory part to a ticket. Owner-only (Bearer token).
+
+    Path parameters:
+    - ticket_id (int, required): Unique service ticket ID.
+    - part_id (int, required): Unique inventory part ID.
     """
     ticket = db.session.get(ServiceTicket, ticket_id)
     if not ticket:

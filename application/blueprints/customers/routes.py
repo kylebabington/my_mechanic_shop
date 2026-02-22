@@ -84,12 +84,11 @@ def get_customers():
     """
     Paginated customer list.
 
-    Query params:
-    - limit: how many records to return (default: 10
-    - offset: how many records to skip (default: 0)
+    Query parameters:
+    - limit (int, optional): Number of customers to return. Constraint: 1-100. Default 10.
+    - offset (int, optional): Number of customers to skip. Constraint: >= 0. Default 0.
 
-    Example:
-    /customers?limit=10&offset=20
+    Returns JSON: { "customers": [...], "limit": int, "offset": int, "count": int }.
     """
     limit = request.args.get("limit", default=10, type=int)
     offset = request.args.get("offset", default=0, type=int)
@@ -116,6 +115,12 @@ def get_customers():
 
 @customers_bp.route("/<int:customer_id>", methods=["GET"])
 def get_customer(customer_id: int):
+    """
+    Get a single customer by ID.
+
+    Path parameter:
+    - customer_id (int, required): Unique customer ID.
+    """
     customer = db.session.get(Customer, customer_id)
 
     if not customer:

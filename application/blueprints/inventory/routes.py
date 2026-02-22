@@ -48,8 +48,10 @@ def list_parts():
 @inventory_bp.route("/<int:part_id>", methods=["GET"])
 def get_part(part_id: int):
     """
-    Get a specific inventory part.
-    GET /inventory/<int:part_id>
+    Get a specific inventory part by ID.
+
+    Path parameter:
+    - part_id (int, required): Unique inventory part ID.
     """
     part = db.session.get(Inventory, part_id)
     if not part:
@@ -59,9 +61,11 @@ def get_part(part_id: int):
 @inventory_bp.route("/<int:part_id>", methods=["PUT"])
 def update_part(part_id: int):
     """
-    Update a specific inventory part.
-    PUT /inventory/<int:part_id>
-    JSON: {"name": "Oil Filter", "price": 12.99}
+    Update a specific inventory part by ID.
+
+    Path parameter:
+    - part_id (int, required): Unique inventory part ID.
+    Body: {"name": str, "price": float}.
     """
     part = db.session.get(Inventory, part_id)
     if not part:
@@ -81,8 +85,10 @@ def update_part(part_id: int):
 @inventory_bp.route("/<int:part_id>", methods=["DELETE"])
 def delete_part(part_id: int):
     """
-    Delete a specific inventory part.
-    DELETE /inventory/<int:part_id>
+    Delete a specific inventory part by ID.
+
+    Path parameter:
+    - part_id (int, required): Unique inventory part ID.
     """
     part = db.session.get(Inventory, part_id)
     if not part:

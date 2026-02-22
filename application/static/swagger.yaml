@@ -60,10 +60,15 @@ paths:
           in: query
           type: integer
           required: false
+          description: "Max number of customers to return (1-100). Defaults to 10."
+          minimum: 1
+          maximum: 100
         - name: offset
           in: query
           type: integer
           required: false
+          description: "Number of customers to skip for pagination (>=0). Defaults to 0."
+          minimum: 0
       responses:
         200:
           description: "OK"
@@ -81,7 +86,7 @@ paths:
                   phone: "098-765-4321"
               limit: 10
               offset: 0
-              total: 2
+              count: 2
         400:
           description: "Bad pagination values"
           schema: { $ref: "#/definitions/ErrorMessage" }
@@ -106,8 +111,9 @@ paths:
           schema: { $ref: "#/definitions/CustomerLoginResponse" }
           examples:
             application/json:
+              status: "success"
+              message: "Successfully Logged In"
               auth_token: "1234567890..."
-              customer_id: 1
         401:
           description: "Invalid credentials"
           schema: { $ref: "#/definitions/ErrorMessage" }
@@ -201,6 +207,7 @@ paths:
           in: path
           required: true
           type: integer
+          description: "Unique customer ID."
       responses:
         200:
           description: "OK"
@@ -308,6 +315,7 @@ paths:
           in: path
           required: true
           type: integer
+          description: "Unique mechanic ID."
       responses:
         200:
           description: "OK"
@@ -336,6 +344,7 @@ paths:
           in: path
           required: true
           type: integer
+          description: "Unique mechanic ID."
         - in: body
           name: body
           required: true
@@ -362,19 +371,16 @@ paths:
     delete:
       tags: [Mechanics]
       summary: "Delete mechanic"
-      description: "Deletes a mechanic."
+      description: "Deletes a mechanic. Returns 204 No Content with empty body."
       parameters:
         - name: mechanic_id
           in: path
           required: true
           type: integer
+          description: "Unique mechanic ID."
       responses:
-        200:
-          description: "OK"
-          schema: { $ref: "#/definitions/DeleteResponse" }
-          examples:
-            application/json:
-              message: "Mechanic deleted successfully"
+        204:
+          description: "No Content (mechanic deleted successfully)"
         404:
           description: "Not found"
           schema: { $ref: "#/definitions/ErrorMessage" }
@@ -440,6 +446,7 @@ paths:
           in: path
           required: true
           type: integer
+          description: "Unique inventory part ID."
       responses:
         200:
           description: "OK"
@@ -466,6 +473,7 @@ paths:
           in: path
           required: true
           type: integer
+          description: "Unique inventory part ID."
         - in: body
           name: body
           required: true
@@ -496,6 +504,7 @@ paths:
           in: path
           required: true
           type: integer
+          description: "Unique inventory part ID."
       responses:
         200:
           description: "OK"
@@ -581,6 +590,7 @@ paths:
           in: path
           required: true
           type: integer
+          description: "Unique service ticket ID. Owner-only access when using Bearer auth."
       responses:
         200:
           description: "OK"
@@ -625,6 +635,7 @@ paths:
           in: path
           required: true
           type: integer
+          description: "Unique service ticket ID (owner-only)."
         - in: body
           name: body
           required: true
@@ -666,6 +677,7 @@ paths:
           in: path
           required: true
           type: integer
+          description: "Unique service ticket ID (owner-only)."
       responses:
         200:
           description: "OK"
@@ -700,6 +712,7 @@ paths:
           in: path
           required: true
           type: integer
+          description: "Unique service ticket ID (owner-only)."
         - in: body
           name: body
           required: true
@@ -747,10 +760,12 @@ paths:
           in: path
           required: true
           type: integer
+          description: "Unique service ticket ID."
         - name: mechanic_id
           in: path
           required: true
           type: integer
+          description: "Unique mechanic ID to assign."
       responses:
         200:
           description: "OK"
@@ -780,10 +795,12 @@ paths:
           in: path
           required: true
           type: integer
+          description: "Unique service ticket ID."
         - name: mechanic_id
           in: path
           required: true
           type: integer
+          description: "Unique mechanic ID (must be assigned to this ticket)."
       responses:
         200:
           description: "OK"
@@ -822,10 +839,12 @@ paths:
           in: path
           required: true
           type: integer
+          description: "Unique service ticket ID (owner-only)."
         - name: part_id
           in: path
           required: true
           type: integer
+          description: "Unique inventory part ID to add."
       responses:
         200:
           description: "OK"
@@ -973,60 +992,59 @@ definitions:
       service_desc: { type: string }
 
   TicketResponse:
-  type: object
-  properties:
-    id:
-      type: integer
-      example: 10
-    VIN:
-      type: string
-      example: "1HGCM82633A004352"
-    service_date:
-      type: string
-      example: "2026-02-19"
-    service_desc:
-      type: string
-      example: "Oil change"
-    customer_id:
-      type: integer
-      example: 1
-    mechanics:
-      type: array
-      items:
-        type: object
-        properties:
-          id:
-            type: integer
-            example: 2
-          name:
-            type: string
-            example: "Bob Smith"
-          email:
-            type: string
-            example: "bob@garage.com"
-          phone:
-            type: string
-            example: "555-222-3333"
-          salary:
-            type: number
-            format: float
-            example: 50000
-    parts:
-      type: array
-      items:
-        type: object
-        properties:
-          id:
-            type: integer
-            example: 5
-          name:
-            type: string
-            example: "Brake Pads"
-          price:
-            type: number
-            format: float
-            example: 79.99
-
+    type: object
+    properties:
+      id:
+        type: integer
+        example: 10
+      VIN:
+        type: string
+        example: "1HGCM82633A004352"
+      service_date:
+        type: string
+        example: "2026-02-19"
+      service_desc:
+        type: string
+        example: "Oil change"
+      customer_id:
+        type: integer
+        example: 1
+      mechanics:
+        type: array
+        items:
+          type: object
+          properties:
+            id:
+              type: integer
+              example: 2
+            name:
+              type: string
+              example: "Bob Smith"
+            email:
+              type: string
+              example: "bob@garage.com"
+            phone:
+              type: string
+              example: "555-222-3333"
+            salary:
+              type: number
+              format: float
+              example: 50000
+      parts:
+        type: array
+        items:
+          type: object
+          properties:
+            id:
+              type: integer
+              example: 5
+            name:
+              type: string
+              example: "Brake Pads"
+            price:
+              type: number
+              format: float
+              example: 79.99
 
   EditTicketMechanicsPayload:
     type: object

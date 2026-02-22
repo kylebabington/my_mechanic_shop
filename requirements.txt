@@ -8,5 +8,6 @@ flask-limiter
 flask-caching
 flask-swagger-ui
 flask-migrate
+openapi-spec-validator
 gunicorn
 psycopg2-binary

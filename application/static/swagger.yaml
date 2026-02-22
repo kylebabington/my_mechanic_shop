@@ -4,9 +4,9 @@ info:
   description: "Flask API for customers, mechanics, service tickets, and inventory."
   version: "1.0.0"
 
-host: "localhost:5000"
+host: "my-mechanic-shop-98tv.onrender.com"
 schemes:
-  - "http"
+  - "https"
 
 consumes:
   - "application/json"

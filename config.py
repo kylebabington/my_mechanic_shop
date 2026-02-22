@@ -35,9 +35,6 @@ class ProductionConfig(BaseConfig):
         or os.environ.get("DATABASE_URL")
     )
 
-    if not SQLALCHEMY_DATABASE_URI:
-        raise ValueError("Production database URL not set in environment variables.")
-
     CACHE_TYPE = "SimpleCache"
 
 

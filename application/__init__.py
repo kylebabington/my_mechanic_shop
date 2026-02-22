@@ -5,7 +5,7 @@ import os
 from flask import Flask
 from flask_swagger_ui import get_swaggerui_blueprint
 
-from config import DevelopmentConfig, config_by_name
+from config import DevelopmentConfig, ProductionConfig, config_by_name
 from application.extensions import db, ma, limiter, cache, migrate
 
 # Import models so SQLAlchemy knows about them (table creation/migrations).
@@ -34,6 +34,12 @@ def create_app(config_object=None):
     if config_object is None:
         config_name = os.environ.get("FLASK_ENV", "development")
         config_object = config_by_name.get(config_name, DevelopmentConfig)
+
+    # Require DATABASE_URL in production (e.g. Render); defer check so tests can import config with FLASK_ENV=testing.
+    if config_object is ProductionConfig:
+        uri = getattr(config_object, "SQLALCHEMY_DATABASE_URI", None)
+        if not uri:
+            raise ValueError("Production database URL not set in environment variables.")
 
     app = Flask(__name__)
     

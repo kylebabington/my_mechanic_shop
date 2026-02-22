@@ -710,7 +710,7 @@
   "variable": [
     {
       "key": "base_url",
-      "value": "http://localhost:5000"
+      "value": "https://my-mechanic-shop-98tv.onrender.com"
     },
     {
       "key": "auth_token",

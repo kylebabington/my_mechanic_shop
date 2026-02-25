@@ -44,8 +44,8 @@ A RESTful Flask API for managing a mechanic shop: **customers**, **mechanics**, 
 |-------------|------------|
 | Framework   | Flask      |
 | ORM         | SQLAlchemy (Flask-SQLAlchemy, declarative base) |
-| DB          | MySQL (mysql-connector-python) |
-| Migrations  | Flask-Migrate |
+| DB          | PostgreSQL (psycopg2-binary) or MySQL (mysql-connector-python) |
+| Migrations  | Flask-Migrate (Alembic) |
 | Serialization / validation | Marshmallow (Flask-Marshmallow, marshmallow-sqlalchemy) |
 | Auth        | JWT via python-jose; passwords via Werkzeug |
 | Rate limiting | Flask-Limiter |
@@ -59,8 +59,8 @@ A RESTful Flask API for managing a mechanic shop: **customers**, **mechanics**, 
 
 ```
 my_mechanic_shop/
-├── app.py                    # Entry point; creates app and runs server
-├── config.py                 # Loads .env; BaseConfig, DevelopmentConfig, TestingConfig
+├── flask_app.py              # App factory entry (Gunicorn/Flask: FLASK_APP=flask_app)
+├── config.py                 # Loads .env; BaseConfig, DevelopmentConfig, TestingConfig, ProductionConfig
 ├── requirements.txt          # Python dependencies
 ├── .env.example              # Template for .env (copy to .env)
 ├── .gitignore
@@ -105,7 +105,7 @@ my_mechanic_shop/
 ## Prerequisites
 
 - **Python 3.10+** (project uses type hints and modern syntax)
-- **MySQL** server for running the API (e.g. local or Docker); not required for running tests (tests use SQLite)
+- **PostgreSQL** or **MySQL** for running the API (e.g. local or cloud); not required for running tests (tests use SQLite)
 - **pip** (or another Python package manager)
 
 ---
@@ -143,8 +143,15 @@ my_mechanic_shop/
    pip install flask-swagger-ui flask-migrate pyyaml pytest
    ```
 
-4. **Create the MySQL database**:
+4. **Create the database** (PostgreSQL or MySQL):
 
+   **PostgreSQL:**
+   ```bash
+   createdb my_mechanic_shop_db
+   ```
+   Or in `psql`: `CREATE DATABASE my_mechanic_shop_db;`
+
+   **MySQL:**
    ```sql
    CREATE DATABASE my_mechanic_shop_db;
    ```
@@ -167,17 +174,21 @@ Edit `.env` with your settings. Required (and commonly used) variables:
 
 | Variable       | Description |
 |----------------|-------------|
-| `DATABASE_URL` | MySQL connection URL, e.g. `mysql+mysqlconnector://USER:PASSWORD@localhost/my_mechanic_shop_db` |
+| `DATABASE_URL` or `SQLALCHEMY_DATABASE_URI` | DB connection URL. **PostgreSQL:** `postgresql+psycopg2://USER:PASSWORD@HOST:PORT/DATABASE` — **MySQL:** `mysql+mysqlconnector://USER:PASSWORD@localhost/my_mechanic_shop_db` |
 | `SECRET_KEY`   | Secret used for JWT signing; **must** be set for login and protected routes (e.g. a long random string) |
 | `FLASK_DEBUG`  | Optional; `true` or `1` for debug mode |
+| `FLASK_APP`    | Optional; set to `flask_app` for `flask` CLI (e.g. `flask run`, `flask db upgrade`) |
 
-Example `.env`:
+Example `.env` (PostgreSQL):
 
 ```env
-DATABASE_URL=mysql+mysqlconnector://root:YOUR_PASSWORD@localhost/my_mechanic_shop_db
+DATABASE_URL=postgresql+psycopg2://user:password@localhost:5432/my_mechanic_shop_db
 SECRET_KEY=your-secret-key-here
+FLASK_APP=flask_app
 FLASK_DEBUG=true
 ```
+
+For MySQL use: `DATABASE_URL=mysql+mysqlconnector://root:YOUR_PASSWORD@localhost/my_mechanic_shop_db`
 
 **Important:** Never commit `.env`; it is listed in `.gitignore`.
 
@@ -185,25 +196,21 @@ FLASK_DEBUG=true
 
 ## Running the Application
 
-From the project root (with virtual environment activated):
+From the project root (with virtual environment activated). Set `FLASK_APP` so the Flask CLI finds the app (or add `FLASK_APP=flask_app` to `.env`):
 
 ```bash
-python app.py
-```
+# Windows (PowerShell):
+$env:FLASK_APP = "flask_app"; flask run
 
-By default the app runs with `debug=True` and is available at **http://localhost:5000**.
-
-To use a specific config (e.g. development):
-
-```bash
-# Windows (PowerShell/CMD):
-set FLASK_ENV=development
-python app.py
+# Windows (CMD):
+set FLASK_APP=flask_app && flask run
 
 # macOS/Linux:
-export FLASK_ENV=development
-python app.py
+export FLASK_APP=flask_app
+flask run
 ```
+
+The app is available at **http://localhost:5000**. For production (e.g. Render), Gunicorn uses `flask_app:app`.
 
 ---
 
@@ -229,7 +236,7 @@ The project uses **Flask-Migrate** (Alembic) for schema changes.
   flask db downgrade
   ```
 
-Ensure `DATABASE_URL` (and optionally `FLASK_APP=app.py`) is set when running these commands.
+Ensure `DATABASE_URL` (or `SQLALCHEMY_DATABASE_URI`) and `FLASK_APP=flask_app` are set when running these commands.
 
 ---
 
@@ -294,7 +301,11 @@ This serves **Swagger UI** and loads the OpenAPI 2.0 spec from `application/stat
 
 ## Testing with Postman
 
-A Postman collection is included in the project root: **`My Mechanic Shop API.postman_collection.json`**. Import it into Postman to run predefined requests. For auth-required endpoints, set the collection or request variable for the token (e.g. after login) and use it in the `Authorization: Bearer ...` header.
+A Postman collection is included in the project root: **`My Mechanic Shop API.postman_collection.json`**. Import it into Postman to run predefined requests.
+
+- **Collection variable `base_url`**: Set to your API root (e.g. `http://localhost:5000` for local, or your Render/deployed URL). The default may point to a deployed instance.
+- **Auth**: Run **Login** under Customers first; the collection script saves the returned `auth_token` into the `auth_token` variable. Protected requests use `Authorization: Bearer {{auth_token}}`.
+- **IDs**: Set `customer_id`, `mechanic_id`, `ticket_id`, `part_id` as needed when calling Get-by-ID or update/delete requests.
 
 ---
 

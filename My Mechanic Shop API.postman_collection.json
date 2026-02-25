@@ -445,7 +445,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"VIN\": \"1HGBH41JXMN109186\",\n  \"service_date\": \"2025-02-20\",\n  \"service_desc\": \"Oil change, tire rotation, brake check\",\n  \"customer_id\": 1\n}"
+              "raw": "{\n  \"VIN\": \"1HGBH41JXMN109186\",\n  \"service_date\": \"2025-02-20\",\n  \"service_desc\": \"Oil change, tire rotation, brake check\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/service-tickets/{{ticket_id}}",
@@ -457,7 +457,7 @@
                 "{{ticket_id}}"
               ]
             },
-            "description": "Full update. Only owner can update. customer_id required in body."
+            "description": "Full update (VIN, service_date, service_desc). Owner-only; customer_id is set from token."
           },
           "response": []
         },

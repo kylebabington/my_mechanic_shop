@@ -524,10 +524,8 @@ paths:
   /service-tickets/:
     post:
       tags: [Tickets]
-      summary: "Create ticket (auth)"
-      description: "Requires Bearer token. Rate limited: 5 per minute."
-      security:
-        - bearerAuth: []
+      summary: "Create ticket"
+      description: "Create a service ticket. No auth. Body must include customer_id. Rate limited: 5 per minute."
       parameters:
         - in: body
           name: body
@@ -544,14 +542,13 @@ paths:
               service_date: "2025-02-18"
               service_desc: "Oil change"
               customer_id: 1
-
-        401:
-          description: "Missing/invalid token"
+        404:
+          description: "Customer not found"
           schema: { $ref: "#/definitions/ErrorMessage" }
           examples:
             application/json:
-              error: "Unauthorized"
-              message: "Missing/invalid token"
+              error: "Not Found"
+              message: "Customer not found."
         429:
           description: "Rate limit exceeded"
           schema: { $ref: "#/definitions/ErrorMessage" }
@@ -581,16 +578,14 @@ paths:
   /service-tickets/{ticket_id}:
     get:
       tags: [Tickets]
-      summary: "Get ticket (auth, owner only)"
-      description: "Returns a ticket by their ID."
-      security:
-        - bearerAuth: []
+      summary: "Get ticket by ID"
+      description: "Returns a ticket by ID. No auth required."
       parameters:
         - name: ticket_id
           in: path
           required: true
           type: integer
-          description: "Unique service ticket ID. Owner-only access when using Bearer auth."
+          description: "Unique service ticket ID."
       responses:
         200:
           description: "OK"
@@ -602,40 +597,24 @@ paths:
               service_date: "2025-02-18"
               service_desc: "Oil change"
               customer_id: 1
-        401:
-          description: "Missing/invalid token"
-          schema: { $ref: "#/definitions/ErrorMessage" }
-          examples:
-            application/json:
-              error: "Unauthorized"
-              message: "Missing/invalid token"
-        403:
-          description: "Forbidden (not owner)"
-          schema: { $ref: "#/definitions/ErrorMessage" }
-          examples:
-            application/json:
-              error: "Forbidden"
-              message: "Forbidden (not owner)"
         404:
           description: "Not found"
           schema: { $ref: "#/definitions/ErrorMessage" }
           examples:
             application/json:
               error: "Not Found"
-              message: "Ticket not found"
+              message: "Ticket not found."
 
     put:
       tags: [Tickets]
-      summary: "Update ticket (auth, owner only)"
-      description: "Updates a ticket's information."
-      security:
-        - bearerAuth: []
+      summary: "Update ticket"
+      description: "Updates a ticket by ID. No auth. Body can include VIN, service_date, service_desc, and optionally customer_id."
       parameters:
         - name: ticket_id
           in: path
           required: true
           type: integer
-          description: "Unique service ticket ID (owner-only)."
+          description: "Unique service ticket ID."
         - in: body
           name: body
           required: true
@@ -651,68 +630,50 @@ paths:
               service_date: "2025-02-18"
               service_desc: "Oil change"
               customer_id: 1
-        403:
-          description: "Forbidden"
-          schema: { $ref: "#/definitions/ErrorMessage" }
-          examples:
-            application/json:
-              error: "Forbidden"
-              message: "Forbidden (not owner)"
         404:
           description: "Not found"
           schema: { $ref: "#/definitions/ErrorMessage" }
           examples:
             application/json:
               error: "Not Found"
-              message: "Ticket not found"
+              message: "Ticket not found."
 
     delete:
       tags: [Tickets]
-      summary: "Delete ticket (auth, owner only)"
-      description: "Deletes a ticket."
-      security:
-        - bearerAuth: []
+      summary: "Delete ticket"
+      description: "Deletes a ticket by ID. No auth required."
       parameters:
         - name: ticket_id
           in: path
           required: true
           type: integer
-          description: "Unique service ticket ID (owner-only)."
+          description: "Unique service ticket ID."
       responses:
         200:
           description: "OK"
           schema: { $ref: "#/definitions/DeleteResponse" }
           examples:
             application/json:
-              message: "Ticket deleted successfully"
-        403:
-          description: "Forbidden"
-          schema: { $ref: "#/definitions/ErrorMessage" }
-          examples:
-            application/json:
-              error: "Forbidden"
-              message: "Forbidden (not owner)"
+              message: "Ticket: 10 deleted successfully."
         404:
           description: "Not found"
           schema: { $ref: "#/definitions/ErrorMessage" }
           examples:
             application/json:
               error: "Not Found"
-              message: "Ticket not found"
+              message: "Ticket not found."
 
   /service-tickets/{ticket_id}/edit:
     put:
       tags: [Tickets]
-      summary: "Bulk add/remove mechanics (auth, owner only)"
-      description: "Bulk adds or removes mechanics from a ticket."
-      security:
-        - bearerAuth: []
+      summary: "Bulk add/remove mechanics"
+      description: "Bulk add or remove mechanics on a ticket. No auth. Body: add_ids (array of mechanic IDs), remove_ids (array of mechanic IDs)."
       parameters:
         - name: ticket_id
           in: path
           required: true
           type: integer
-          description: "Unique service ticket ID (owner-only)."
+          description: "Unique service ticket ID."
         - in: body
           name: body
           required: true
@@ -720,28 +681,19 @@ paths:
       responses:
         200:
           description: "OK"
-          schema: { $ref: "#/definitions/TicketResponse" }
+          schema: { $ref: "#/definitions/EditTicketMechanicsResponse" }
           examples:
             application/json:
-              id: 10
-              VIN: "1HGCM82633A004352"
-              service_date: "2025-02-18"
-              service_desc: "Oil change"
-              customer_id: 1
+              message: "Ticket mechanics updated successfully."
+              ticket_id: 10
+              mechanic_ids: [1, 2]
         400:
-          description: "Bad payload"
+          description: "Bad payload (e.g. invalid ids or mechanic not assigned)"
           schema: { $ref: "#/definitions/ErrorMessage" }
           examples:
             application/json:
               error: "Bad Request"
-              message: "Bad payload"
-        403:
-          description: "Forbidden"
-          schema: { $ref: "#/definitions/ErrorMessage" }
-          examples:
-            application/json:
-              error: "Forbidden"
-              message: "Forbidden (not owner)"
+              message: "add_ids and remove_ids must be lists."
         404:
           description: "Not found"
           schema: { $ref: "#/definitions/ErrorMessage" }
@@ -830,16 +782,14 @@ paths:
   /service-tickets/{ticket_id}/add-part/{part_id}:
     put:
       tags: [Tickets]
-      summary: "Add part to ticket (auth, owner only)"
-      description: "Adds a part to a ticket."
-      security:
-        - bearerAuth: []
+      summary: "Add part to ticket"
+      description: "Adds an inventory part to a ticket. No auth required (shop use)."
       parameters:
         - name: ticket_id
           in: path
           required: true
           type: integer
-          description: "Unique service ticket ID (owner-only)."
+          description: "Unique service ticket ID."
         - name: part_id
           in: path
           required: true
@@ -856,13 +806,6 @@ paths:
               service_date: "2025-02-18"
               service_desc: "Oil change"
               customer_id: 1
-        403:
-          description: "Forbidden"
-          schema: { $ref: "#/definitions/ErrorMessage" }
-          examples:
-            application/json:
-              error: "Forbidden"
-              message: "Forbidden (not owner)"
         404:
           description: "Ticket or part not found"
           schema: { $ref: "#/definitions/ErrorMessage" }
@@ -977,19 +920,21 @@ definitions:
   # ---- Tickets ----
   TicketCreatePayload:
     type: object
-    required: [VIN, service_date, service_desc]
+    required: [VIN, service_date, service_desc, customer_id]
     properties:
       VIN: { type: string }
       service_date: { type: string }
       service_desc: { type: string }
+      customer_id: { type: integer, description: "ID of the customer this ticket belongs to." }
 
   TicketUpdatePayload:
     type: object
-    required: [VIN, service_date, service_desc]
+    description: "All fields optional (partial update)."
     properties:
       VIN: { type: string }
       service_date: { type: string }
       service_desc: { type: string }
+      customer_id: { type: integer, description: "Optional; reassign ticket to another customer." }
 
   TicketResponse:
     type: object
@@ -1052,6 +997,17 @@ definitions:
       add_ids:
         type: array
         items: { type: integer }
+        description: "Mechanic IDs to assign to the ticket."
       remove_ids:
+        type: array
+        items: { type: integer }
+        description: "Mechanic IDs to unassign from the ticket."
+
+  EditTicketMechanicsResponse:
+    type: object
+    properties:
+      message: { type: string }
+      ticket_id: { type: integer }
+      mechanic_ids:
         type: array
         items: { type: integer }

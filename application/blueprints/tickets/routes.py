@@ -13,14 +13,16 @@ from application.models.inventory import Inventory
 
 @tickets_bp.route("/", methods=["POST"])
 @limiter.limit("5 per minute")
-@token_required
-def create_ticket(customer_id: int):
+def create_ticket():
+    """
+    Create a service ticket. No auth; shop supplies customer_id in body.
+    Body: {"VIN": str, "service_date": str, "service_desc": str, "customer_id": int}.
+    """
     try:
-        ticket_data = ticket_schema.load(request.json, partial=("customer_id",))
+        ticket_data = ticket_schema.load(request.json)
     except ValidationError as e:
         return jsonify(e.messages), 400
 
-    ticket_data["customer_id"] = customer_id
     customer = db.session.get(Customer, ticket_data["customer_id"])
     if not customer:
         return jsonify({"error": "Customer not found."}), 404
@@ -38,47 +40,34 @@ def list_tickets():
     return tickets_schema.jsonify(tickets), 200
 
 @tickets_bp.route("/<int:ticket_id>", methods=["GET"])
-@token_required
-def get_ticket(customer_id: int, ticket_id: int):
+def get_ticket(ticket_id: int):
     """
-    Get a single ticket by ID. Owner-only (customer_id from Bearer token).
-
-    Path parameter:
-    - ticket_id (int, required): Unique service ticket ID.
+    Get a single ticket by ID. No auth; shop can view any ticket.
     """
     ticket = db.session.get(ServiceTicket, ticket_id)
     if not ticket:
         return jsonify({"error": "Ticket not found."}), 404
-    if ticket.customer_id != customer_id:
-        return jsonify({"error": "Forbidden."}), 403
     return ticket_schema.jsonify(ticket), 200
 
 @tickets_bp.route("/<int:ticket_id>", methods=["PUT"])
-@token_required
-def update_ticket(customer_id: int, ticket_id: int):
+def update_ticket(ticket_id: int):
     """
-    Update a ticket by ID. Owner-only.
-
-    Path parameter:
-    - ticket_id (int, required): Unique service ticket ID.
-    Body: {"VIN": str, "service_date": str, "service_desc": str}.
+    Update a ticket by ID. No auth; shop can update any ticket.
+    Body: {"VIN": str, "service_date": str, "service_desc": str, "customer_id": int (optional)}.
     """
     ticket = db.session.get(ServiceTicket, ticket_id)
     if not ticket:
         return jsonify({"error": "Ticket not found."}), 404
 
-    if ticket.customer_id != customer_id:
-        return jsonify({"error": "Forbidden."}), 403
-
     try:
-        ticket_data = ticket_schema.load(request.json, partial=("customer_id",))
+        ticket_data = ticket_schema.load(request.json, partial=True)
     except ValidationError as e:
         return jsonify(e.messages), 400
 
-    ticket_data["customer_id"] = customer_id
-    customer = db.session.get(Customer, ticket_data["customer_id"])
-    if not customer:
-        return jsonify({"error": "Customer not found."}), 404
+    if "customer_id" in ticket_data:
+        customer = db.session.get(Customer, ticket_data["customer_id"])
+        if not customer:
+            return jsonify({"error": "Customer not found."}), 404
 
     for key, value in ticket_data.items():
         setattr(ticket, key, value)
@@ -88,20 +77,13 @@ def update_ticket(customer_id: int, ticket_id: int):
     return ticket_schema.jsonify(ticket), 200
 
 @tickets_bp.route("/<int:ticket_id>", methods=["DELETE"])
-@token_required
-def delete_ticket(customer_id: int, ticket_id: int):
+def delete_ticket(ticket_id: int):
     """
-    Delete a ticket by ID. Owner-only.
-
-    Path parameter:
-    - ticket_id (int, required): Unique service ticket ID.
+    Delete a ticket by ID. No auth; shop can delete any ticket.
     """
     ticket = db.session.get(ServiceTicket, ticket_id)
     if not ticket:
         return jsonify({"error": "Ticket not found."}), 404
-
-    if ticket.customer_id != customer_id:
-        return jsonify({"error": "Forbidden."}), 403
 
     db.session.delete(ticket)
     db.session.commit()
@@ -166,25 +148,15 @@ def remove_mechanic_from_ticket(ticket_id: int, mechanic_id: int):
     }), 200
 
 @tickets_bp.route("/<int:ticket_id>/edit", methods=["PUT"])
-@token_required
-def edit_ticket_mechanics(customer_id: int, ticket_id: int):
+def edit_ticket_mechanics(ticket_id: int):
     """
-    Bulk add/remove mechanics on a ticket. Owner-only (Bearer token).
-
-    Path parameter:
-    - ticket_id (int, required): Unique service ticket ID.
-
+    Bulk add/remove mechanics on a ticket. No auth; shop can edit any ticket.
     Body: {"add_ids": [int, ...], "remove_ids": [int, ...]}.
-    - add_ids: mechanic IDs to assign (appended if not already assigned).
-    - remove_ids: mechanic IDs to unassign (must be currently assigned).
     """
 
     ticket = db.session.get(ServiceTicket, ticket_id)
     if not ticket:
         return jsonify({"error": "Ticket not found."}), 404
-
-    if ticket.customer_id != customer_id:
-        return jsonify({"error": "Forbidden."}), 403
 
     payload = request.get_json(silent=True) or {}
 
@@ -227,21 +199,13 @@ def edit_ticket_mechanics(customer_id: int, ticket_id: int):
     }), 200
 
 @tickets_bp.route("/<int:ticket_id>/add-part/<int:part_id>", methods=["PUT"])
-@token_required
-def add_part_to_ticket(customer_id: int, ticket_id: int, part_id: int):
+def add_part_to_ticket(ticket_id: int, part_id: int):
     """
-    Add an inventory part to a ticket. Owner-only (Bearer token).
-
-    Path parameters:
-    - ticket_id (int, required): Unique service ticket ID.
-    - part_id (int, required): Unique inventory part ID.
+    Add an inventory part to a ticket. No auth; shop can add parts to any ticket.
     """
     ticket = db.session.get(ServiceTicket, ticket_id)
     if not ticket:
         return jsonify({"error": "Ticket not found."}), 404
-
-    if ticket.customer_id != customer_id:
-        return jsonify({"error": "Forbidden. You can only add parts to your own tickets."}), 403
 
     part = db.session.get(Inventory, part_id)
     if not part:

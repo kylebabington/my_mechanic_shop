@@ -355,14 +355,10 @@
       "name": "Service Tickets",
       "item": [
         {
-          "name": "Create Ticket (auth)",
+          "name": "Create Ticket",
           "request": {
             "method": "POST",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{auth_token}}"
-              },
               {
                 "key": "Content-Type",
                 "value": "application/json"
@@ -370,7 +366,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"VIN\": \"1HGBH41JXMN109186\",\n  \"service_date\": \"2025-02-18\",\n  \"service_desc\": \"Oil change and tire rotation\"\n}"
+              "raw": "{\n  \"VIN\": \"1HGBH41JXMN109186\",\n  \"service_date\": \"2025-02-18\",\n  \"service_desc\": \"Oil change and tire rotation\",\n  \"customer_id\": 1\n}"
             },
             "url": {
               "raw": "{{base_url}}/service-tickets/",
@@ -382,7 +378,7 @@
                 ""
               ]
             },
-            "description": "Create a service ticket. customer_id is set from token. Rate limited: 5 per minute."
+            "description": "Create a service ticket (no auth). Body must include customer_id. Rate limited: 5 per minute."
           },
           "response": []
         },
@@ -406,15 +402,10 @@
           "response": []
         },
         {
-          "name": "Get Ticket by ID (auth)",
+          "name": "Get Ticket by ID",
           "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{auth_token}}"
-              }
-            ],
+            "header": [],
             "url": {
               "raw": "{{base_url}}/service-tickets/{{ticket_id}}",
               "host": [
@@ -425,19 +416,15 @@
                 "{{ticket_id}}"
               ]
             },
-            "description": "Get a ticket. Only owner (customer from token) can access."
+            "description": "Get a single ticket by ID (no auth)."
           },
           "response": []
         },
         {
-          "name": "Update Ticket (auth)",
+          "name": "Update Ticket",
           "request": {
             "method": "PUT",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{auth_token}}"
-              },
               {
                 "key": "Content-Type",
                 "value": "application/json"
@@ -457,20 +444,15 @@
                 "{{ticket_id}}"
               ]
             },
-            "description": "Full update (VIN, service_date, service_desc). Owner-only; customer_id is set from token."
+            "description": "Update a ticket by ID (no auth). Body: VIN, service_date, service_desc; customer_id optional."
           },
           "response": []
         },
         {
-          "name": "Delete Ticket (auth)",
+          "name": "Delete Ticket",
           "request": {
             "method": "DELETE",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{auth_token}}"
-              }
-            ],
+            "header": [],
             "url": {
               "raw": "{{base_url}}/service-tickets/{{ticket_id}}",
               "host": [
@@ -481,7 +463,7 @@
                 "{{ticket_id}}"
               ]
             },
-            "description": "Delete a ticket. Only owner can delete."
+            "description": "Delete a ticket by ID (no auth)."
           },
           "response": []
         },
@@ -528,14 +510,10 @@
           "response": []
         },
         {
-          "name": "Edit Ticket Mechanics (auth)",
+          "name": "Edit Ticket Mechanics",
           "request": {
             "method": "PUT",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{auth_token}}"
-              },
               {
                 "key": "Content-Type",
                 "value": "application/json"
@@ -556,20 +534,15 @@
                 "edit"
               ]
             },
-            "description": "Bulk add/remove mechanics. Only ticket owner. add_ids and remove_ids are arrays of mechanic IDs."
+            "description": "Bulk add/remove mechanics on a ticket (no auth). add_ids and remove_ids are arrays of mechanic IDs."
           },
           "response": []
         },
         {
-          "name": "Add Part to Ticket (auth)",
+          "name": "Add Part to Ticket",
           "request": {
             "method": "PUT",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{auth_token}}"
-              }
-            ],
+            "header": [],
             "url": {
               "raw": "{{base_url}}/service-tickets/{{ticket_id}}/add-part/{{part_id}}",
               "host": [
@@ -582,7 +555,7 @@
                 "{{part_id}}"
               ]
             },
-            "description": "Add one inventory part to the ticket. Only ticket owner."
+            "description": "Add one inventory part to a ticket (no auth)."
           },
           "response": []
         }

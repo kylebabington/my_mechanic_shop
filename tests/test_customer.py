@@ -171,6 +171,7 @@ class TestCustomers(unittest.TestCase):
             "password": "securepassword123"
         })
         self.assertEqual(create_2.status_code, 201)
+        customer_2_id = create_2.get_json()["id"]
 
         login_2 = self.client.post("/customers/login", json={
             "email": "two@example.com",
@@ -179,12 +180,13 @@ class TestCustomers(unittest.TestCase):
         self.assertEqual(login_2.status_code, 200)
         token_2 = login_2.get_json()["auth_token"]
 
-        # create ticket for customer 2
+        # create ticket for customer 2 (no auth; shop creates with customer_id)
         ticket_2 = self.client.post("/service-tickets/", json={
             "VIN": "1HGCM82633A004352",
             "service_date": "2025-02-18",
-            "service_desc": "Customer Two Ticket"
-        }, headers={"Authorization": f"Bearer {token_2}"})
+            "service_desc": "Customer Two Ticket",
+            "customer_id": customer_2_id,
+        })
         self.assertEqual(ticket_2.status_code, 201)
 
         #-----------------------------------------------------------

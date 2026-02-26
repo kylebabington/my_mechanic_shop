@@ -87,284 +87,149 @@ class TestTickets(unittest.TestCase):
         self.assertEqual(response.status_code, 201)
         return response.get_json()
 
+    def create_ticket(self, customer_id, VIN="1HGBH41JXMN109186", service_date="2026-01-01", service_desc="Oil change"):
+        """
+        Creates a service ticket via POST /service-tickets/ (no auth).
+        Body must include customer_id. Returns response JSON with ticket id.
+        """
+        response = self.client.post("/service-tickets/", json={
+            "VIN": VIN,
+            "service_date": service_date,
+            "service_desc": service_desc,
+            "customer_id": customer_id,
+        })
+        self.assertEqual(response.status_code, 201)
+        return response.get_json()
+
     #------------Tests------------#
 
-    def test_create_ticket_success_auth_sets_customer_id(self):
-        # create + login customer
+    def test_create_ticket_success_requires_customer_id(self):
+        # create customer (no login needed for shop creating ticket)
         customer = self.create_customer()
-        token = self.login_customer_get_token()
 
-        # create ticket WITHOUT customer_id (route sets from token)
-        payload = {
-            "VIN": "1HGBH41JXMN109186",
-            "service_date": "2026-01-01",
-            "service_desc": "Oil change",
-        }
-
+        # create ticket WITH customer_id in body (no auth)
         response = self.client.post(
             "/service-tickets/",
-            json=payload,
-            headers=self.auth_headers(token)
+            json={
+                "VIN": "1HGBH41JXMN109186",
+                "service_date": "2026-01-01",
+                "service_desc": "Oil change",
+                "customer_id": customer["id"],
+            }
         )
 
         self.assertEqual(response.status_code, 201)
-
         data = response.get_json()
-
-        # verify customer_id in returned ticket matches the logged-in customer
-
         self.assertEqual(data["customer_id"], customer["id"])
         self.assertEqual(data["VIN"], "1HGBH41JXMN109186")
 
-    def test_create_ticket_without_token_fails(self):
+    def test_create_ticket_without_customer_id_fails(self):
         payload = {
             "VIN": "1HGBH41JXMN109186",
             "service_date": "2026-01-01",
             "service_desc": "Oil change",
         }
-
         response = self.client.post("/service-tickets/", json=payload)
+        self.assertEqual(response.status_code, 400)
 
-        # should fail with 401 Unauthorized
-        self.assertEqual(response.status_code, 401)
-
-    def test_ticket_owner_can_get_ticket(self):
-        # create first customer and login
+    def test_anyone_can_get_ticket_by_id(self):
         customer = self.create_customer(email="owner@example.com")
-        token = self.login_customer_get_token(email="owner@example.com")
+        ticket = self.create_ticket(customer["id"], service_desc="Owner Ticket")
+        ticket_id = ticket["id"]
 
-        # create ticket
-        ticket_response = self.client.post(
-            "/service-tickets/",
-            json={
-                "VIN": "1HGBH41JXMN109186",
-                "service_date": "2026-01-01",
-                "service_desc": "Owner Ticket"
-            },
-            headers=self.auth_headers(token)
-        )
-
-        self.assertEqual(ticket_response.status_code, 201)
-        ticket_id = ticket_response.get_json()["id"]
-
-        # owner fetches ticket
-        get_response = self.client.get(
-            f"/service-tickets/{ticket_id}",
-            headers=self.auth_headers(token)
-        )
-
+        # get ticket without auth (shop or anyone can view)
+        get_response = self.client.get(f"/service-tickets/{ticket_id}")
         self.assertEqual(get_response.status_code, 200)
-
-    def test_non_owner_cannot_get_ticket(self):
-        # Create owner
-        self.create_customer(email="owner@example.com")
-        owner_token = self.login_customer_get_token(email="owner@example.com")
-
-        # create ticket
-        ticket_response = self.client.post(
-            "/service-tickets/",
-            json={
-                "VIN": "1HGBH41JXMN109186",
-                "service_date": "2026-01-01",
-                "service_desc": "Owner Ticket"
-            },
-            headers=self.auth_headers(owner_token)
-        )
-
-        ticket_id = ticket_response.get_json()["id"]
-
-        # Create second customer
-        second_customer = self.create_customer(email="intruder@example.com")
-        intruder_token = self.login_customer_get_token(email="intruder@example.com")
-
-        # intruder tries to get ticket
-        get_response = self.client.get(
-            f"/service-tickets/{ticket_id}",
-            headers=self.auth_headers(intruder_token)
-        )
-
-        self.assertEqual(get_response.status_code, 403)
+        self.assertEqual(get_response.get_json()["id"], ticket_id)
 
     def test_assign_mechanic_to_ticket(self):
-        # Create and login customer
-        self.create_customer()
-        token = self.login_customer_get_token()
+        customer = self.create_customer()
+        ticket = self.create_ticket(customer["id"], VIN="VIN123", service_desc="Assignment test")
+        ticket_id = ticket["id"]
 
-        # Create ticket
-        ticket_res = self.client.post(
-            "/service-tickets/",
-            json={
-                "VIN": "VIN123",
-                "service_date": "2025-02-18",
-                "service_desc": "Assignment test"
-            },
-            headers=self.auth_headers(token)
-        )
-
-        ticket_id = ticket_res.get_json()["id"]
-
-        # Create mechanic
         mechanic = self.create_mechanic()
         mechanic_id = mechanic["id"]
 
-        # Assign mechanic
         assign_res = self.client.put(
             f"/service-tickets/{ticket_id}/assign-mechanic/{mechanic_id}"
         )
+        self.assertEqual(assign_res.status_code, 200)
 
-        # Verify mechanic attached
-        get_res = self.client.get(
-            f"/service-tickets/{ticket_id}",
-            headers=self.auth_headers(token)
-        )
-
+        get_res = self.client.get(f"/service-tickets/{ticket_id}")
         data = get_res.get_json()
-
         self.assertIn(mechanic_id, [m["id"] for m in data["mechanics"]])
 
     def test_remove_mechanic_from_ticket(self):
-        self.create_customer()
-        token = self.login_customer_get_token()
-
-        ticket_response = self.client.post(
-            "/service-tickets/",
-            json={
-                "VIN": "VIN123",
-                "service_date": "2025-02-18",
-                "service_desc": "Assignment test"
-            },
-            headers=self.auth_headers(token)
-        )
-
-        ticket_id = ticket_response.get_json()["id"]
+        customer = self.create_customer()
+        ticket = self.create_ticket(customer["id"], VIN="VIN123", service_desc="Assignment test")
+        ticket_id = ticket["id"]
 
         mechanic = self.create_mechanic()
         mechanic_id = mechanic["id"]
 
-        self.client.put(
-            f"/service-tickets/{ticket_id}/assign-mechanic/{mechanic_id}"
-        )
+        self.client.put(f"/service-tickets/{ticket_id}/assign-mechanic/{mechanic_id}")
 
         remove_response = self.client.put(
-            f"/service-tickets/{ticket_id}/remove-mechanic/{mechanic_id}",
-            headers=self.auth_headers(token)
+            f"/service-tickets/{ticket_id}/remove-mechanic/{mechanic_id}"
         )
-
         self.assertEqual(remove_response.status_code, 200)
 
-        get_response = self.client.get(
-            f"/service-tickets/{ticket_id}",
-            headers=self.auth_headers(token)
-        )
-
+        get_response = self.client.get(f"/service-tickets/{ticket_id}")
         data = get_response.get_json()
-
         self.assertNotIn(mechanic_id, [m["id"] for m in data["mechanics"]])
     
-    def test_edit_ticket_mechanics_bulk_add_remove_auth(self):
-        self.create_customer()
-        token = self.login_customer_get_token()
+    def test_edit_ticket_mechanics_bulk_add_remove(self):
+        customer = self.create_customer()
+        ticket = self.create_ticket(customer["id"], VIN="VIN-BULK-1", service_desc="Bulk edit mechanics test")
+        ticket_id = ticket["id"]
 
-        ticket_response = self.client.post(
-            "/service-tickets/",
-            json={
-                "VIN": "VIN-BULK-1",
-                "service_date": "2025-02-18",
-                "service_desc": "Bulk edit mechanics test"
-            },
-            headers=self.auth_headers(token)
-        )
-
-        ticket_id = ticket_response.get_json()["id"]
-
-        # Create 3 mechanics
         m1 = self.create_mechanic(email="m1@garage.com")
         m2 = self.create_mechanic(email="m2@garage.com")
         m3 = self.create_mechanic(email="m3@garage.com")
 
-        # First: add m1 and m2
         edit_response_1 = self.client.put(
             f"/service-tickets/{ticket_id}/edit",
             json={"add_ids": [m1["id"], m2["id"]], "remove_ids": []},
-            headers=self.auth_headers(token)
         )
         self.assertEqual(edit_response_1.status_code, 200)
 
-        # Second: remove m1, add m3
         edit_response_2 = self.client.put(
             f"/service-tickets/{ticket_id}/edit",
             json={"add_ids": [m3["id"]], "remove_ids": [m1["id"]]},
-            headers=self.auth_headers(token)
         )
         self.assertEqual(edit_response_2.status_code, 200)
 
-        # Verify final mechanics set by fetching ticket (owner auth)
-        get_response = self.client.get(
-            f"/service-tickets/{ticket_id}",
-            headers=self.auth_headers(token)
-        )
+        get_response = self.client.get(f"/service-tickets/{ticket_id}")
         self.assertEqual(get_response.status_code, 200)
-
         ticket = get_response.get_json()
-
-    # If your ticket serializer includes mechanics list:
         mechanic_ids = {m["id"] for m in ticket.get("mechanics", [])}
-
-        # Expect m2 and m3, but NOT m1
         self.assertIn(m2["id"], mechanic_ids)
         self.assertIn(m3["id"], mechanic_ids)
         self.assertNotIn(m1["id"], mechanic_ids)
 
-    def test_add_part_to_ticket_auth(self):
-        self.create_customer()
-        token = self.login_customer_get_token()
-
-        ticket_response = self.client.post(
-            "/service-tickets/",
-            json={
-                "VIN": "VIN-PART-1",
-                "service_date": "2025-02-18",
-                "service_desc": "Part addition test"
-            },
-            headers=self.auth_headers(token)
-        )
-        self.assertEqual(ticket_response.status_code, 201)
-        ticket_id = ticket_response.get_json()["id"]
+    def test_add_part_to_ticket(self):
+        customer = self.create_customer()
+        ticket = self.create_ticket(customer["id"], VIN="VIN-PART-1", service_desc="Part addition test")
+        ticket_id = ticket["id"]
 
         part = self.create_part(name="Brake Pad")
         part_id = part["id"]
 
         add_response = self.client.put(
-            f"/service-tickets/{ticket_id}/add-part/{part_id}",
-            headers=self.auth_headers(token)
+            f"/service-tickets/{ticket_id}/add-part/{part_id}"
         )
         self.assertEqual(add_response.status_code, 200)
 
-        get_response = self.client.get(
-            f"/service-tickets/{ticket_id}",
-            headers=self.auth_headers(token)
-        )
+        get_response = self.client.get(f"/service-tickets/{ticket_id}")
         self.assertEqual(get_response.status_code, 200)
-
         ticket = get_response.get_json()
-
         part_ids = {p["id"] for p in ticket.get("parts", [])}
         self.assertIn(part_id, part_ids)
 
-    def test_owner_can_update_ticket(self):
-        self.create_customer()
-        token = self.login_customer_get_token()
-
-        ticket_response = self.client.post(
-            "/service-tickets/",
-            json={
-                "VIN": "VIN-UPD-1",
-                "service_date": "2025-02-18",
-                "service_desc": "Original"
-            },
-            headers=self.auth_headers(token)
-        )
-        ticket_id = ticket_response.get_json()["id"]
+    def test_update_ticket(self):
+        customer = self.create_customer()
+        ticket = self.create_ticket(customer["id"], VIN="VIN-UPD-1", service_desc="Original")
+        ticket_id = ticket["id"]
 
         update_response = self.client.put(
             f"/service-tickets/{ticket_id}",
@@ -373,117 +238,27 @@ class TestTickets(unittest.TestCase):
                 "service_date": "2025-02-20",
                 "service_desc": "Updated description"
             },
-            headers=self.auth_headers(token)
         )
         self.assertEqual(update_response.status_code, 200)
-
-    def test_non_owner_cannot_update_ticket(self):
-    # 1) Create owner
-        self.create_customer(email="owner@example.com")
-        owner_token = self.login_customer_get_token(email="owner@example.com")
-
-    # 2) Owner creates ticket
-        ticket_response = self.client.post(
-            "/service-tickets/",
-            json={
-                "VIN": "VIN-AUTH-1",
-                "service_date": "2025-02-18",
-                "service_desc": "Owner ticket"
-            },
-            headers=self.auth_headers(owner_token)
-        )
-        self.assertEqual(ticket_response.status_code, 201)
-        ticket_id = ticket_response.get_json()["id"]
-        # 3) Create second user (intruder)
-        self.create_customer(email="intruder@example.com")
-        intruder_token = self.login_customer_get_token(email="intruder@example.com")
-
-        # 4) Intruder attempts update
-        update_response = self.client.put(
-            f"/service-tickets/{ticket_id}",
-            json={
-                "VIN": "VIN-AUTH-1",
-                "service_date": "2025-02-20",
-                "service_desc": "Hacked description"
-            },
-            headers=self.auth_headers(intruder_token)
-        )
-        self.assertEqual(update_response.status_code, 403)
-
-    def test_non_owner_cannot_delete_ticket(self):
-    # 1) Create owner
-        self.create_customer(email="owner@example.com")
-        owner_token = self.login_customer_get_token(email="owner@example.com")
-
-    # 2) Owner creates ticket
-        ticket_response = self.client.post(
-            "/service-tickets/",
-            json={
-                "VIN": "VIN-AUTH-2",
-                "service_date": "2025-02-18",
-                "service_desc": "Owner ticket"
-            },
-            headers=self.auth_headers(owner_token)
-        )
-
-        self.assertEqual(ticket_response.status_code, 201)
-        ticket_id = ticket_response.get_json()["id"]
-
-        # 3) Create intruder
-        self.create_customer(email="intruder@example.com")
-        intruder_token = self.login_customer_get_token(email="intruder@example.com")
-
-        # 4) Intruder attempts delete
-        delete_response = self.client.delete(
-            f"/service-tickets/{ticket_id}",
-            headers=self.auth_headers(intruder_token)
-        )
-        self.assertEqual(delete_response.status_code, 403)
+        self.assertEqual(update_response.get_json()["service_desc"], "Updated description")
 
     def test_list_tickets(self):
-        # create + login customer
-        self.create_customer()
-        token = self.login_customer_get_token()
+        customer = self.create_customer()
+        self.create_ticket(customer["id"], service_desc="List tickets test")
 
-        # create a ticket so list isn't empty
-        create_ticket_response = self.client.post("/service-tickets/", json={
-            "VIN": "1HGBH41JXMN109186",
-            "service_date": "2026-01-01",
-            "service_desc": "List tickets test"
-        }, headers=self.auth_headers(token))
-
-        self.assertEqual(create_ticket_response.status_code, 201)
-
-        # list tickets
         response = self.client.get("/service-tickets/")
         self.assertEqual(response.status_code, 200)
-
         data = response.get_json()
         self.assertIsInstance(data, list)
         self.assertGreaterEqual(len(data), 1)
 
-    def test_owner_can_delete_ticket(self):
-        # ------------------------------------------------------------
-        # Create + login owner customer
-        # ------------------------------------------------------------
-        self.create_customer()
-        token = self.login_customer_get_token()
+    def test_delete_ticket(self):
+        customer = self.create_customer()
+        ticket = self.create_ticket(customer["id"], service_desc="Owner ticket")
+        ticket_id = ticket["id"]
 
-        # Create a ticket owned by this customer
-        create_ticket_response = self.client.post("/service-tickets/", json={
-            "VIN": "1HGBH41JXMN109186",
-            "service_date": "2026-01-01",
-            "service_desc": "Owner ticket"
-        }, headers=self.auth_headers(token))
-        self.assertEqual(create_ticket_response.status_code, 201)
-
-        ticket_id = create_ticket_response.get_json()["id"]
-
-        # ------------------------------------------------------------
-        # Successful delete
-        # ------------------------------------------------------------
-        delete_response = self.client.delete(
-            f"/service-tickets/{ticket_id}",
-            headers=self.auth_headers(token)
-        )
+        delete_response = self.client.delete(f"/service-tickets/{ticket_id}")
         self.assertIn(delete_response.status_code, [200, 204])
+
+        get_response = self.client.get(f"/service-tickets/{ticket_id}")
+        self.assertEqual(get_response.status_code, 404)

@@ -152,12 +152,13 @@ class TestCustomers(unittest.TestCase):
         self.assertEqual(login_1.status_code, 200)
         token_1 = login_1.get_json()["auth_token"]
 
-        # create ticket for customer 1
+        # create ticket for customer 1 (no auth; shop creates with customer_id)
         ticket_1 = self.client.post("/service-tickets/", json={
             "VIN": "1HGCM82633A004352",
             "service_date": "2025-02-18",
-            "service_desc": "Customer One Ticket"
-        }, headers={"Authorization": f"Bearer {token_1}"})
+            "service_desc": "Customer One Ticket",
+            "customer_id": customer_1_id,
+        })
         self.assertEqual(ticket_1.status_code, 201)
 
         # ------------------------------------------------------------
